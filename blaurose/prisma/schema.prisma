@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  company_id    String  @default(uuid()) @id
+  company_code  String  @db.Char(4) @unique
+  company_name  String
+  shops Shop[]   // for One-To-Many
+
+  stamp_delete  Boolean @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("m_companies")
+  @@index([company_code])
+}
+
+model Shop {
+  shop_id    String  @default(uuid()) @unique
+  shop_code  String  @db.Char(4)      @unique
+  shop_name  String
+  stamp_hq   Boolean @default(false)
+  employees Employee[]    // for One-To-Many
+
+  company Company @relation(fields: [company_id], references: [company_id])
+  company_id String
+
+  stamp_delete  Boolean @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("m_shops")
+  @@id([company_id, shop_code])
+  @@index([shop_code])
+}
+
+model Employee {
+  employee_id    String  @default(uuid()) @unique
+  employee_code  String  @db.Char(4)      @unique
+  employee_name  String
+  company_joined_at DateTime?
+  hourly_wage_amount　Int?
+
+  shop Shop @relation(fields: [shop_id], references: [shop_id])
+  shop_id String
+  user User?
+
+  stamp_delete  Boolean @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("m_employees")
+  @@id([shop_id, employee_code])
+  @@index([employee_code])
+}
+
+model User {
+  user_id   String  @default(uuid()) @id
+  login_id  String  @unique
+  password  String
+
+  employee  Employee  @relation(fields: [employee_id], references: [employee_id])  
+  employee_id String  @unique
+
+  stamp_delete  Boolean @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("m_users")
+  @@index([login_id, password])
+}
