@@ -29,6 +29,7 @@ export const config = {
 } satisfies NextAuthOptions
 
 const prisma = new PrismaClient({log: ["query"]})
+
 export const getServerSideProps = (async (context: any) => {
   // Fetch data from external API
   const session = await getServerSession(context.req, context.res, config)
@@ -175,25 +176,6 @@ export default function Main({
     </main>
   )
 }
-
-// const Main = ({session}) => {
-//   //const { data: session, status } = useSession();
-//   const test = session;
-//   const [name, setName] = useState("")
-//   useEffect(() => {
-//     setName("nameData");
-//   }, []);
-//   //<div>{status}</div>
-//   //const aaa = session?.user.employeeName;
-//   return (
-//     <main>
-//       <div>{name}</div>
-//       <button onClick={() => signOut()}>サインアウト</button>
-//     </main>
-//   );
-// };
-
-
 
 //export default Main;
 //export default dynamic(() => Promise.resolve(Main), { ssr: false });

@@ -13,6 +13,7 @@
     "@prisma/client": "^5.20.0",
     "@reduxjs/toolkit": "^2.2.7",
     "@types/jsonwebtoken": "^9.0.7",
+    "ag-grid-react": "^32.2.2",
     "bootstrap": "^5.3.3",
     "jsonwebtoken": "^9.0.2",
     "luxon": "^3.5.0",
