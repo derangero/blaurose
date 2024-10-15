@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "t_timecard" ADD COLUMN     "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "stamp_delete" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "updated_at" TIMESTAMPTZ(3);

@@ -9,26 +9,25 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Company {
-  company_id    String  @default(uuid()) @id
+  company_id    String  @default(cuid()) @id
   company_code  String  @db.Char(4) @unique
   company_name  String
   shops Shop[]   // for One-To-Many
 
   stamp_delete  Boolean @default(false)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime? @updatedAt     @db.Timestamptz(3)
 
   @@map("m_companies")
-  @@index([company_code])
 }
 
 model Shop {
-  shop_id    String  @default(uuid()) @unique
+  shop_id    String  @default(cuid()) @unique
   shop_code  String  @db.Char(4)      @unique
   shop_name  String
   stamp_hq   Boolean @default(false)
@@ -38,8 +37,8 @@ model Shop {
   company_id String
 
   stamp_delete  Boolean @default(false)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime? @updatedAt @db.Timestamptz(3)
 
   @@map("m_shops")
   @@id([company_id, shop_code])
@@ -47,19 +46,20 @@ model Shop {
 }
 
 model Employee {
-  employee_id    String  @default(uuid()) @unique
+  employee_id    String  @default(cuid()) @unique
   employee_code  String  @db.Char(4)      @unique
   employee_name  String
-  company_joined_at DateTime?
+  company_joined_at DateTime?             @db.Date
   hourly_wage_amount　Int?
 
   shop Shop @relation(fields: [shop_id], references: [shop_id])
   shop_id String
   user User?
+  timecard Timecard[]    // for One-To-Many
 
   stamp_delete  Boolean @default(false)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime? @updatedAt @db.Timestamptz(3)
 
   @@map("m_employees")
   @@id([shop_id, employee_code])
@@ -67,7 +67,7 @@ model Employee {
 }
 
 model User {
-  user_id   String  @default(uuid()) @id
+  user_id   String  @default(cuid()) @id
   login_id  String  @unique
   password  String
 
@@ -75,9 +75,28 @@ model User {
   employee_id String  @unique
 
   stamp_delete  Boolean @default(false)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  updated_at    DateTime? @updatedAt    @db.Timestamptz(3)
 
   @@map("m_users")
   @@index([login_id, password])
+}
+
+model Timecard {
+  timecard_id String       @id @default(cuid())
+  stamped_on Int
+  stampedFrom_at DateTime? @db.Timestamptz(3)
+  stampedTo_at DateTime?   @db.Timestamptz(3)
+  stamp_approval  Boolean  @default(false)
+
+  employee  Employee  @relation(fields: [employee_id], references: [employee_id])  
+  employee_id String
+
+  stamp_delete  Boolean @default(false)
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  updated_at    DateTime? @updatedAt    @db.Timestamptz(3)
+
+  @@map("t_timecard")
+  @@unique(fields: [stamped_on, employee_id], name: "u_timecard_stamped_on_employee_id")
+  
 }

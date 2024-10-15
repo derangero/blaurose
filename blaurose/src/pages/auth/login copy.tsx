@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import {MDBBtn, MDBContainer,MDBRow,MDBCol,MDBIcon,MDBInput} from 'mdb-react-ui-kit';
 import { useRouter } from "next/router";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { userDataState } from "../../recoil/userData"
+import { GetServerSideProps } from "next";
+import { getCsrfToken } from "next-auth/react";
 
-const Login: React.FC = () => {
+type SignInProps = {
+  csrfToken?: string;
+};
+
+const Login: React.FC = ({ csrfToken }: SignInProps) => {
     const [login_id, setEmployeeCode] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-
-    const [userData, setUserData] = useRecoilState(userDataState)
 
     //ログイン後にトップページへ移動させる
     const router = useRouter();
@@ -41,7 +43,6 @@ const Login: React.FC = () => {
             sessionStorage.setItem("shop_name", data.param.shop_name);
             //router.push({ pathname: "main", query: { login_id : data.login_id } }, "../main/main");
             //router.push({ pathname: "../main/main", query: data.param }, "../main/main");
-            setUserData(data.param)
             router.push("../main/main");
         }else{
             setError(data.message);
@@ -60,6 +61,7 @@ const Login: React.FC = () => {
                 break;
         }
     }
+    //<form onSubmit={submitHandler}>
     return (
         <MDBContainer fluid>
           <MDBRow>
@@ -68,7 +70,8 @@ const Login: React.FC = () => {
                 <img src="../assets/icons/flower4519.png" width="48" height="48" className="App-logo mr-5" alt="logo" />
                 <span className="h1 fw-bold mb-0">Braurose</span>
               </div>
-              <form onSubmit={submitHandler}>
+              <form method="post" action="/api/auth/callback/credentials">
+                <input name="csrfToken" type="hidden" defaultValue={csrfToken} />
                 <div className='d-flex flex-column justify-content-center h-custom-2 w-75 pt-4'>
         
                     <h3 className="fw-normal mb-3 ps-5 pb-3 fs-4" style={{letterSpacing: '1px'}}>勤怠管理システム</h3>
@@ -90,6 +93,14 @@ const Login: React.FC = () => {
           </MDBRow>
         </MDBContainer>
       );
+};
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return {
+    props: {
+      csrfToken: await getCsrfToken(context),
+    },
+  };
 };
 
 export default Login;

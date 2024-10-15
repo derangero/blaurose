@@ -7,3 +7,8 @@
   type WithGetAccessControl<P> = P & {
     getAccessControl?: GetAccessControl
   }
+  type SignInProps = {
+    csrfToken?: string;
+  };
+
+  export type Timecard = (typeof Timecard)[keyof typeof Timecard]

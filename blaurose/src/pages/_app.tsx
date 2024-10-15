@@ -5,34 +5,45 @@ import authOptions from "./api/auth/[...nextauth]"
 
 import type { AppProps } from "next/app";
 import { RecoilRoot, useRecoilValue } from "recoil";
-import Login from "./login/login";
+import Login from "./auth/login";
 import dynamic from "next/dynamic";
 import { userDataState } from "@/recoil/userData";
 import { SessionProvider } from "next-auth/react";
 import { getServerSession } from "next-auth";
+import Header from "@/components/header/Header";
 
-function MyApp({ Component, pageProps } : AppProps) {
+function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
+  const isFromLoginPage = Component.name == "Login";
   return (
-      <RecoilRoot>
+    <SessionProvider session={session}>
+        {!isFromLoginPage && <Header />}
         <Component {...pageProps} />
-      </RecoilRoot>
-  );
-
-  const hasSession = sessionStorage.getItem("recoil-persist") != null;
-  if (Component.name == "Login" || !hasSession) {
-    return (
-      <RecoilRoot>
-        <Login {...pageProps} />
-      </RecoilRoot>
-    );
-  }
-
-  return (
-    <RecoilRoot>
-      <Component {...pageProps} />
-    </RecoilRoot>
+    </SessionProvider>
   );
 }
+
+// function MyApp({ Component, pageProps } : AppProps) {
+//   return (
+//       <RecoilRoot>
+//         <Component {...pageProps} />
+//       </RecoilRoot>
+//   );
+
+//   const hasSession = sessionStorage.getItem("recoil-persist") != null;
+//   if (Component.name == "Login" || !hasSession) {
+//     return (
+//       <RecoilRoot>
+//         <Login {...pageProps} />
+//       </RecoilRoot>
+//     );
+//   }
+
+//   return (
+//     <RecoilRoot>
+//       <Component {...pageProps} />
+//     </RecoilRoot>
+//   );
+// }
 
 export default MyApp;
 

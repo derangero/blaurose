@@ -24,10 +24,7 @@ import dynamic from 'next/dynamic';
 const Header = () => {
   const [openBasic, setOpenBasic] = useState(false);
   Settings.defaultLocale = 'ja';
-  const displayDate = DateTime.local().toFormat('yyyy年M月d日（EEE）');
-  
-  // 体重のAtomを呼び出し(読み取り専用)
-  const userDataAtom = useRecoilValue(userDataState)
+  const displayDate = DateTime.local().toFormat('yyyy/M/d（EEE）');
 
   return (
     <MDBNavbar expand='lg' light bgColor='light'>
@@ -60,8 +57,6 @@ const Header = () => {
             </MDBNavbarItem>
           </MDBNavbarNav>
         </MDBCollapse>
-        <div className="fs-6">{displayDate}</div>
-        <div className="fs-6">{userDataAtom.employee_code}</div>
       </MDBContainer>
     </MDBNavbar>
     
