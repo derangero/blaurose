@@ -3,7 +3,7 @@ import ReactDatePicker, { registerLocale } from 'react-datepicker'
 import ja from "date-fns/locale/ja";
 import "react-datepicker/dist/react-datepicker.css"
 import 'bootstrap/dist/css/bootstrap.min.css'
-import '../../styles/datePicker/style.scss'
+//import '../../styles/datePicker/style.scss'
 
 //日本語化
 registerLocale("ja", ja);
