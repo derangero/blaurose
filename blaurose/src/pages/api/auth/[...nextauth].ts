@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient({log: ["query"]})
+import { SelectSessionDataByLoginIdAndPassword } from '../../../../prisma/user/dba_user'
 
 export default NextAuth({
   providers: [
@@ -20,50 +19,22 @@ export default NextAuth({
         if (credentials == null || credentials.login_id == null || credentials.password == '') {
           return null; //ユーザーが存在しません
         }
-        const result = await prisma.user.findFirst({
-          select: {
-              password: true,
-              user_id: true,
-              employee: {
-                  select: {
-                      employee_id: true,
-                      employee_code: true,
-                      employee_name: true,
-                      shop: {
-                          select: {
-                              shop_id:true,
-                              shop_code:true,
-                              shop_name:true,
-                              company_id:true
-                          }
-                      }
-                  }
-              }
-          },
-          where: { login_id: credentials?.login_id, password: credentials?.password }
-      })
-      // const user = {
-      //   name: "J Smith",
-      //   email: "jsmith@example.com",
-      //   image: "",
-      //   id: "1",
-      //   role: "admin",
-      //   backendToken: "backEndAccessToken",
-      // };
-        if (result) {
+        const user = await SelectSessionDataByLoginIdAndPassword(credentials.login_id, credentials.password)
+
+        if (user) {
           // 返されたオブジェクトはすべて、JWT の「user」プロパティに保存されます。
-          const user = {
+          const result = {
             id: "",
-            name: {result},
+            name: user,
             email: "",
             image: "",
-            employeeCode: result.employee.employee_code,
-            employeeName: result.employee.employee_name,
-            shopCode: result.employee.shop.shop_code,
-            shopName: result.employee.shop.shop_name,
-            companyId: result.employee.shop.company_id,
+            employeeCode: user.employee.employee_code,
+            employeeName: user.employee.employee_name,
+            shopCode: user.employee.shop.shop_code,
+            shopName: user.employee.shop.shop_name,
+            companyId: user.employee.shop.company_id,
           };
-          return user;
+          return result;
         } else {
           // 認証失敗の場合はnullを返却します。
           return null;

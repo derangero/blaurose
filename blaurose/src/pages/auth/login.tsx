@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import { getCsrfToken } from "next-auth/react";
 import Image from 'next/image'
+import { SignInProps } from "@/types";
 
 const Login: React.FC = ({ csrfToken }: SignInProps) => {
   const router = useRouter();

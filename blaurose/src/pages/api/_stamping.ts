@@ -1,15 +1,8 @@
-import React, { useEffect } from 'react'
-import jwt from "jsonwebtoken"
-import { PrismaClient } from '@prisma/client'
 import { getServerSession, NextAuthOptions } from 'next-auth'
-const NEXT_PUBLIC_SECRET_KEY = "abcdefg"
-const prisma = new PrismaClient({log: ["query"]})
 import authOptions from "../api/auth/[...nextauth]"
-import { redirect, Router } from 'react-router-dom'
-import {useRouter} from 'next/router';
 import { DateTime,Settings } from "luxon";
-import { GetTimecard, GetTimecardByPrevious } from '../../../prisma/timecard/dba_timecard'
-
+import { FindByStampedOnAndEmployeeId, FindPreviousByStampedOnAndEmployeeId, UpdateByStampedOnAndEmployeeId, UpsertByStampedOnAndEmployeeId } from '../../../prisma/timecard/dba_timecard'
+import { Timecard } from '@prisma/client';
 
 export const config = {
     providers: authOptions.providers, // rest of your config
@@ -18,48 +11,32 @@ export const config = {
 export const Stamping = async (
     req: { body: { login_id: any; password: any } },
     res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { message: string; token?: any; param?: any }): any; new(): any } } }) => {
-        try {
-	    //フロントエンド側からのデータを受け取る
-        const { login_id, password } = req.body
+    try {
         const session = await getServerSession(req, res, config)
         Settings.defaultLocale = 'ja';
-        const nowDate = DateTime.local();
-        const nowDateTime = DateTime.local();
+        const today = DateTime.local();
+        const yesterday = DateTime.local().minus({days: 1});
         const employeeId = session?.user.name.result.employee.employee_id;
         let stampedByPreviousMark = false;
-        let timecard = await GetTimecardByPrevious(prisma, nowDate.minus({days: 1}).toFormat('yyyyMMdd'), employeeId);
+
+        const todayForUpdate = DateTime.local();
+        let restMinutesTimeForUpdate = 0;
+        let actualWorkingMinutesTimeForUpdate = 0;
+
+        let timecard = await FindPreviousByStampedOnAndEmployeeId(yesterday.toFormat('yyyyMMdd'), employeeId);
         if (timecard) {
-            timecard = await prisma.timecard.update({
-                where: {
-                    u_timecard_stamped_on_employee_id: {
-                        stamped_on: parseInt(nowDate.minus({days: 1}).toFormat('yyyyMMdd')),
-                        employee_id: employeeId
-                    }
-                },
-                data: {
-                  stampedTo_at: nowDateTime.toISO(),
-                },
-              }) 
+            restMinutesTimeForUpdate = calcRestMinutes(timecard?.stampedFrom_at, today)
+            actualWorkingMinutesTimeForUpdate = calcActualWorkingMinutesTime(timecard)
+            timecard = await UpdateByStampedOnAndEmployeeId(yesterday.toFormat('yyyyMMdd'), employeeId, todayForUpdate, restMinutesTimeForUpdate)
+
+
             stampedByPreviousMark = true;
         } else {
-          timecard = await GetTimecard(prisma, nowDate.toFormat('yyyyMMdd'), employeeId);
-          timecard = await prisma.timecard.upsert({
-            where: {
-                u_timecard_stamped_on_employee_id: {
-                    stamped_on: parseInt(nowDate.toFormat('yyyyMMdd')),
-                    employee_id: employeeId
-                }
-            },
-            update: {
-              stampedTo_at: nowDateTime.toISO(),
-            },
-            create: {
-                stamped_on: parseInt(nowDate.toFormat('yyyyMMdd')),
-                stampedFrom_at: nowDateTime.toISO(),
-                employee_id: employeeId,
-            },
-          }) 
+          timecard = await FindByStampedOnAndEmployeeId(today.toFormat('yyyyMMdd'), employeeId);
+          restMinutesTimeForUpdate = calcRestMinutes(timecard?.stampedFrom_at, today)
+          timecard = await UpsertByStampedOnAndEmployeeId(today.toFormat('yyyyMMdd'), employeeId, todayForUpdate, restMinutesTimeForUpdate)
         }
+
         return res.status(200).json({
         message: "打刻しました",
         param: {
@@ -76,4 +53,35 @@ export const Stamping = async (
     }
 }
 
+function calcWorkedMinutes(stampedFrom_at:Date, stampedTo_at:DateTime): number {
+    if (stampedFrom_at == null || stampedTo_at == null) {
+        return 0;
+    }
+
+    const stampedFromAt = DateTime.fromJSDate(stampedFrom_at);
+    const stampedToAt = stampedTo_at;
+    const diff = stampedToAt.diff(stampedFromAt, 'minute');
+    const workedMinutes = Math.round(diff.minutes); // 四捨五入
+
+    return workedMinutes;
+}
+
+function calcRestMinutes(stampedFrom_at:Date, stampedTo_at:DateTime): number {
+    const workedMinutes = calcWorkedMinutes(stampedFrom_at, stampedTo_at); // 四捨五入
+
+    let restMinutes = 0;
+    if (workedMinutes >= 405) { // 6時間45分以上　※TODO:設定ファイルから取得
+        restMinutes = 45;  // 45分休憩       ※TODO:設定ファイルから取得
+    } else if (workedMinutes >= 480) { // 8時間00分以上　※TODO:設定ファイルから取得
+        restMinutes = 60;  // 60分休憩       ※TODO:設定ファイルから取得
+    }
+    return restMinutes;
+}
+
+
 export default Stamping	
+
+function calcActualWorkingMinutesTime(timecard: any): number {
+    throw new Error('Function not implemented.');
+}
+

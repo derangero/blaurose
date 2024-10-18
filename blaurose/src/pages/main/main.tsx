@@ -1,68 +1,53 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import 'mdb-react-ui-kit/dist/css/mdb.min.css';
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { getServerSession } from 'next-auth';
 import { signOut, useSession } from 'next-auth/react';
 import type { NextAuthOptions } from "next-auth"
-import { IncomingMessage, ServerResponse } from 'http';
 import { GetServerSideProps, InferGetServerSidePropsType, NextApiRequest, NextApiResponse } from 'next';
-import { NextApiRequestCookies } from 'next/dist/server/api-utils';
 import authOptions from "../api/auth/[...nextauth]"
-import { Session } from 'inspector/promises';
 import { DateTime,Settings } from "luxon";
 import { MDBBtn, MDBCol } from 'mdb-react-ui-kit';
-import { PrismaClient } from '@prisma/client';
-import router, { useRouter } from 'next/router';
-import { GetTimecard, GetTimecardByPrevious } from '../../../prisma/timecard/dba_timecard';
+import { FindByStampedOnAndEmployeeId, FindPreviousByStampedOnAndEmployeeId, UpdateByStampedOnAndEmployeeId, UpsertByStampedOnAndEmployeeId } from '../../../prisma/timecard/dba_timecard'
+import { SessionData } from '@/types';
 
-type Repo = {
-  shopCode?: string
-  shopName?: string
-  employeeName?: string
-  stampedFromAt?: Date
-  stampedToAt?: Date
-  stampedByPreviousMark?: string
-}
 export const config = {
   providers: authOptions.providers, // rest of your config
 } satisfies NextAuthOptions
 
-const prisma = new PrismaClient({log: ["query"]})
-
 export const getServerSideProps = (async (context: any) => {
-  // Fetch data from external API
   const session = await getServerSession(context.req, context.res, config)
   //Settings.defaultLocale = 'ja';
   const nowDate = DateTime.now();
   
-  const shopCode = session?.user.name.result.employee.shop.shop_code;
-  const shopName = session?.user.name.result.employee.shop.shop_name;
-  const employeeName = session?.user.name.result.employee.employee_name;
-  const employeeId = session?.user.name.result.employee.employee_id;
-  const repo = {
+  const shopCode = session?.user.name.employee.shop.shop_code;
+  const shopName = session?.user.name.employee.shop.shop_name;
+  const employeeName = session?.user.name.employee.employee_name;
+  const employeeId = session?.user.name.employee.employee_id;
+  const sessionData = {
     shopCode: shopCode,
     shopName: shopName,
     employeeName: employeeName,
+    employeeId: employeeId,
     stampedFromAt: "",
     stampedToAt: "",
     stampedByPreviousMark: ""
   }
-  let timecard = await GetTimecardByPrevious(prisma, nowDate.minus({days: 1}).toFormat('yyyyMMdd'), employeeId);
+  let timecard = await FindPreviousByStampedOnAndEmployeeId(nowDate.minus({days: 1}).toFormat('yyyyMMdd'), employeeId);
   if (timecard) {
-    repo.stampedByPreviousMark = "（前日）";
+    sessionData.stampedByPreviousMark = "（前日）";
   } else {
-    timecard = await GetTimecard(prisma, nowDate.toFormat('yyyyMMdd'), employeeId);
+    timecard = await FindByStampedOnAndEmployeeId(nowDate.toFormat('yyyyMMdd'), employeeId);
   }
 
   if (timecard) {
     if (timecard.stampedFrom_at) {
-      repo.stampedFromAt = DateTime.fromJSDate(timecard.stampedFrom_at).toFormat('HH:mm');
+      sessionData.stampedFromAt = DateTime.fromJSDate(timecard.stampedFrom_at).toFormat('HH:mm');
     } else {
       //none
     }
     if (timecard.stampedTo_at) {
-      repo.stampedToAt = DateTime.fromJSDate(timecard.stampedTo_at).toFormat('HH:mm');
+      sessionData.stampedToAt = DateTime.fromJSDate(timecard.stampedTo_at).toFormat('HH:mm');
     } else {
       //none
     }
@@ -71,18 +56,18 @@ export const getServerSideProps = (async (context: any) => {
   }
 
   return {
-    props: { repo }
+    props: { sessionData }
   }
-}) satisfies GetServerSideProps<{ repo: Repo }>
+}) satisfies GetServerSideProps<{ sessionData: SessionData }>
 
 export default function Main({
-  repo,
+  sessionData,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
 
   const [postError, setPostError] = useState("");
-  const [stampedFromAt, setStampedFromAt] = useState(repo.stampedFromAt);
-  const [stampedToAt, setStampedToAt] = useState(repo.stampedToAt);
-  const [stampedByPreviousMark, setStampedByPreviousMark] = useState(repo.stampedByPreviousMark);
+  const [stampedFromAt, setStampedFromAt] = useState(sessionData.stampedFromAt);
+  const [stampedToAt, setStampedToAt] = useState(sessionData.stampedToAt);
+  const [stampedByPreviousMark, setStampedByPreviousMark] = useState(sessionData.stampedByPreviousMark);
   const displayDate = DateTime.local().toFormat('yyyy/M/d（EEE）');
   const displayTime = DateTime.local().toFormat('HH:mm');
   const [date, setDate] = useState([])
@@ -166,9 +151,9 @@ export default function Main({
         <MDBCol className="mr-5">
         <div className='card '>
           <div className='card-body'>
-            <div>店舗コード：{repo.shopCode}</div>
-            <div>店舗名：{repo.shopName}</div>
-            <div>氏名：{repo.employeeName}</div>
+            <div>店舗コード：{sessionData.shopCode}</div>
+            <div>店舗名：{sessionData.shopName}</div>
+            <div>氏名：{sessionData.employeeName}</div>
           </div>
         </div>
         </MDBCol>

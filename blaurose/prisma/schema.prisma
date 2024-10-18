@@ -87,6 +87,8 @@ model Timecard {
   stamped_on Int
   stampedFrom_at DateTime? @db.Timestamptz(3)
   stampedTo_at DateTime?   @db.Timestamptz(3)
+  rest_minutes_time        Int?
+  actual_working_minutes_time      Int?
   stamp_approval  Boolean  @default(false)
 
   employee  Employee  @relation(fields: [employee_id], references: [employee_id])  
@@ -98,5 +100,6 @@ model Timecard {
 
   @@map("t_timecard")
   @@unique(fields: [stamped_on, employee_id], name: "u_timecard_stamped_on_employee_id")
+  @@index([stamped_on])
   
 }

@@ -46,7 +46,7 @@ const Header = () => {
               </MDBNavbarLink>
             </MDBNavbarItem>
             <MDBNavbarItem>
-              <MDBNavbarLink active aria-current='page' href='/workList/WorkList'>
+              <MDBNavbarLink active aria-current='page' href='/workList/workList'>
                 勤怠表
               </MDBNavbarLink>
             </MDBNavbarItem>

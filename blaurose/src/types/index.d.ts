@@ -10,5 +10,15 @@
   type SignInProps = {
     csrfToken?: string;
   };
+  type SessionData = {
+    shopCode?: string
+    shopName?: string
+    employeeName?: string
+    employeeId?: string
+    stampedFromAt?: Date
+    stampedToAt?: Date
+    stampedByPreviousMark?: string
+  }
 
   export type Timecard = (typeof Timecard)[keyof typeof Timecard]
+  export type User = (typeof User)[keyof typeof User]

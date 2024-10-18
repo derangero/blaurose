@@ -1,8 +1,6 @@
-import React from 'react'
 import jwt from "jsonwebtoken"
-import { PrismaClient } from '@prisma/client'
 const NEXT_PUBLIC_SECRET_KEY = "abcdefg"
-const prisma = new PrismaClient({log: ["query"]})
+import { SelectByLoginId } from '../../../prisma/user/dba_user'
 
 const Login = async (
     req: { body: { login_id: any; password: any } },
@@ -11,25 +9,7 @@ const Login = async (
 	    //フロントエンド側からのデータを受け取る
         const { login_id, password } = req.body
 	
-        const user = await prisma.user.findFirst({
-            select: {
-                password: true,
-                user_id: true,
-                employee: {
-                    select: {
-                        employee_code: true,
-                        employee_name: true,
-                        shop: {
-                            select: {
-                                shop_code:true,
-                                shop_name:true
-                            }
-                        }
-                    }
-                }
-            },
-            where: { login_id: login_id }
-        })
+        const user = await SelectByLoginId(login_id)
         if (user) {
             if (password === user.password) {
 	            //jsonwebtokenでトークンを発行する
