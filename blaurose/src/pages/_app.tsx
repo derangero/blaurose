@@ -3,7 +3,7 @@ import 'mdb-react-ui-kit/dist/css/mdb.min.css';
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import type { AppProps } from "next/app";
 import { SessionProvider } from "next-auth/react";
-import Header from "@/components/header/Header";
+import Header from "./header/header";
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const isFromLoginPage = Component.name == "Login";
