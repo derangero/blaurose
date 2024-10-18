@@ -51,5 +51,5 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     },
   };
 };
-
+Login.displayName = "Login"
 export default Login;

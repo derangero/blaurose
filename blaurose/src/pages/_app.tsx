@@ -6,8 +6,7 @@ import { SessionProvider } from "next-auth/react";
 import Header from "./header/header";
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
-  const isFromLoginPage = Component.name == "Login";
-  console.log(Component.name)
+  const isFromLoginPage = Component.displayName  === "Login";
   return (
     <SessionProvider session={session}>
         {!isFromLoginPage && <Header />}
