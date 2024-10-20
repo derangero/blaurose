@@ -161,7 +161,7 @@ export default function Main({
     </main>
   )
 }
-
+Main.displayName = "Main"
 //export default Main;
 //export default dynamic(() => Promise.resolve(Main), { ssr: false });
 

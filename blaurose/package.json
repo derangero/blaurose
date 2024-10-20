@@ -21,6 +21,8 @@
     "bootstrap": "^5.3.3",
     "dayjs": "^1.11.13",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "luxon": "^3.5.0",
     "mdb-react-ui-kit": "^9.0.0",
     "next": "14.2.13",

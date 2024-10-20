@@ -11,10 +11,10 @@
     csrfToken?: string;
   };
   type SessionData = {
-    shopCode?: string
-    shopName?: string
-    employeeName?: string
-    employeeId?: string
+    shopCode: string
+    shopName: string
+    employeeName: string
+    employeeId: string
     stampedFromAt?: Date
     stampedToAt?: Date
     stampedByPreviousMark?: string
