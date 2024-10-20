@@ -1,0 +1,81 @@
+☆彡環境構築から画面起動まで☆彡
+
+【nodejs v20.18.01】
+https://nodejs.org/en/
+node -v
+
+【npm　v10.9.0】
+npm install -g npm
+npm -v
+
+【nextjs】
+npm install next@latest react@latest react-dom@latest
+
+【Git】
+Git Clone https://github.com/derangero/blaurose.git（複製用）
+Git Pull（更新用）
+
+【Prisma（インストール）】
+npm install prisma --save-dev
+npx prisma generate
+
+【docker　v4.34.3】
+・docker-desktop
+https://www.docker.com/products/docker-desktop/
+use recommend setting
+skip
+※「docker-compose.yml」プロジェクトになければ作成
+・コンテナ作成・起動
+docker compose up -d
+（アクセスを許可する）
+
+【Prisma（マイグレート）】
+→npx prisma migrate dev --name init
+
+＊＊＊ここまででテストデータを投入しておく＊＊＊
+
+【Next.js】
+・ビルド
+npm run build
+・起動
+npm run dev
+
+＊＊＊http://localhost:3000/にアクセスして動作確認する＊＊＊
+
+【pm2】　※本番環境にて使用する
+・開始
+pm2 start npm --name "blaurose" -- start
+・ロギング
+pm2 log
+
+
+【※プロジェクトにインストール済み】
+・next-auth
+npm install next-auth
+
+・react-data-grid
+npm install react-data-grid
+
+・react-datepicker
+npm install react-datepicker --save
+
+・react-dom
+npm install react react-dom
+
+・react-router-dom
+npm install react-router-dom
+
+・luxon
+npm install --save luxon
+
+・react-bootstrap
+npm install react-bootstrap bootstrap
+
+・mdb-react-ui-kit
+npm i mdb-react-ui-kit
+npm i @fortawesome/fontawesome-free
+
+・jspdf
+npm install jspdf jspdf-autotable
+
+
