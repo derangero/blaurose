@@ -71,7 +71,7 @@ export default NextAuth({
     },
     // ログイン後にリダイレクトするURLを返す
     async redirect({ url, baseUrl }) {
-      return "http://localhost:3000/main/main";
+      return process.env.NEXT_PUBLIC_SERVICE_URL_BASE + "main/main";
     },
   },
 });
