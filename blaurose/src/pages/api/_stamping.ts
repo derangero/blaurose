@@ -16,7 +16,7 @@ export const Stamping = async (
         Settings.defaultLocale = 'ja';
         const today = DateTime.local();
         const yesterday = DateTime.local().minus({days: 1});
-        const employeeId = session?.user.name.result.employee.employee_id;
+        const employeeId = session?.user.name.employee.employee_id;
         let stampedByPreviousMark = false;
 
         const todayForUpdate = DateTime.local();

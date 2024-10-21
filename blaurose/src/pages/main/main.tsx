@@ -120,9 +120,9 @@ export default function Main({
 };
   return (
     <main>
-      <div className="d-flex align-items-start bg-body-tertiary mb-3 ml-5 mt-3" style={{ height: "100px" }}>
-        <MDBCol className='fs-5 mr-5'>
-        <div className='card'>
+      <div className="d-flex align-items-start bg-body-tertiary mb-3 ml-5 mt-3" style={{ height: "200px" }}>
+        <MDBCol className='fs-5 mr-5 h-100'>
+        <div className='card h-100'>
           <div className='card-body'>
             <div>{date}</div>
             <div>{time}</div>
@@ -136,20 +136,20 @@ export default function Main({
           </div>
         </div>
         <div>
-          <button className="mt-5 ml-5 fs-5" onClick={() => signOut()}>サインアウト</button>
+          <button className="mt-5 ml-5" onClick={() => signOut()}>サインアウト</button>
         </div>
         </MDBCol>
-        <MDBCol className='fs-5 mr-5'>
-        <div className='card '>
+        <MDBCol className='fs-5 mr-5 h-100'>
+        <div className='card h-100'>
           <div className='card-body'>
-            <div>{postError && "サインイン失敗"}</div>
+            <div>{postError && "打刻エラー"}</div>
             <div>開始時刻：{stampedFromAt}  {stampedByPreviousMark}</div>
             <div>終了時刻：{stampedToAt}</div>
           </div>
         </div>
         </MDBCol>
-        <MDBCol className="mr-5">
-        <div className='card '>
+        <MDBCol className="mr-5 h-100">
+        <div className='card h-100'>
           <div className='card-body'>
             <div>店舗コード：{sessionData.shopCode}</div>
             <div>店舗名：{sessionData.shopName}</div>

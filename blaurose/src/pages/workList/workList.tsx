@@ -47,7 +47,7 @@ export const getServerSideProps = (async (context: any) => {
     }
 }) satisfies GetServerSideProps<{ sessionData: SessionData, rows: WorkListRow[], initSummaryRows: WorkListSummaryRow[] }>
 
-const workList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = ({sessionData, initRows, initSummaryRows}) => {
+const WorkList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = ({sessionData, initRows, initSummaryRows}) => {
     const [rows, setRows] = useState(initRows);
     const [summaryRows, setSummaryRows] = useState(initSummaryRows);
     const [isExporting, setIsExporting] = useState(false);
@@ -88,7 +88,9 @@ const workList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>>
 
             const timecards = result.param;
             const rows = _getWorkListRows(timecards);
+            const summaryRows =  _getWorkListSummaryRows(timecards);
             setRows(rows);
+            setSummaryRows(summaryRows);
         }
     }
     const columns = useMemo(() => getColumns(), []);
@@ -103,12 +105,12 @@ const workList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>>
                 bottomSummaryRows={summaryRows}
             />
             <button type="button" onClick={handleExportToPdf}>
-                Export to PDF
+                PDF出力
             </button>
         </div>
     )
 }
-export default workList
+export default WorkList
 
 async function _getSettionData(context: any) : Promise<SessionData> {
     const session = await getServerSession(context.req, context.res, config);
@@ -123,10 +125,8 @@ async function _getSettionData(context: any) : Promise<SessionData> {
 
 function _getWorkListRows(timecards : Timecard[]) {
     const rows: WorkListRow[] = [];
-    if (timecards) {
-        const nowDate = DateTime.now();
-        const fromYearMonthDay = nowDate.startOf('month');
-        const toYearMonthDay = nowDate.endOf('month');
+    if (timecards.length > 0) {
+        const toYearMonthDay = DateTime.fromJSDate(new Date(timecards[0].stampedFrom_at)).endOf('month');
         const timecardMap = timecards.reduce((p: Timecard, c: { stamped_on: number; }
             ) => Object.defineProperty(p, c.stamped_on, { value: c }), {}); 
 
@@ -141,8 +141,8 @@ function _getWorkListRows(timecards : Timecard[]) {
             let lateNightWorkTime = null;
             let holidayWorkTime = null;
             if (timecard) {
-                stampedFromAt = timecard ? DateTime.fromJSDate(new Date(timecard.stampedFrom_at)).toFormat('hh:mm') : "";
-                stampedToAt = timecard ? DateTime.fromJSDate(new Date(timecard.stampedTo_at)).toFormat('hh:mm') : "";
+                stampedFromAt = timecard ? DateTime.fromJSDate(new Date(timecard.stampedFrom_at)).toFormat('HH:mm') : "";
+                stampedToAt = timecard ? DateTime.fromJSDate(new Date(timecard.stampedTo_at)).toFormat('HH:mm') : "";
                 restTime = timecard.rest_minutes_time;
                 actualWorkingTime = timecard.actual_working_minutes_time;
                 overtime = timecard.overtime;
@@ -200,7 +200,7 @@ function _getWorkListSummaryRows(timecards : Timecard[]) : WorkListSummaryRow[] 
     let totalOvertime = 0;
     let totalLateNightWorkTime = 0;
     let totalHolidayWorkTime = 0;
-    if (timecards) {
+    if (timecards.length > 0) {
         for (let timecard of timecards) {
             if (timecard.rest_minutes_time) {
                 totalRestTime = totalRestTime + timecard.rest_minutes_time;

@@ -37,7 +37,7 @@ export async function FindByStampedOnAndEmployeeId(stampedOn: string, employeeId
       where: { 
         stamped_on: {
           gte: parseInt(stampedOnFrom),
-          lt:  parseInt(stampedOnTo)
+          lte:  parseInt(stampedOnTo)
         },
         employee_id: employeeId
       },
