@@ -11,6 +11,9 @@ import { formatDisplayTime } from '../../components/util'
 import { exportToPdf } from '../../components/export/exportUtils'
 import { GetTimecards } from '../api/_workList';
 import { flushSync } from 'react-dom';
+//import { PDFDownloadLink } from '@react-pdf/renderer';
+import dynamic from "next/dynamic";
+import PDF from '@/components/pdf/PDF';
 
 type WorkListRow  = {
     id? :   string,
@@ -31,88 +34,16 @@ type WorkListSummaryRow = {
     totalLateNightWorkTime?:   number,
     totalHolidayWorkTime?:   number,
 }
-  
-export const config = {
-    providers: authOptions.providers, // rest of your config
-} satisfies NextAuthOptions
-  
-export const getServerSideProps = (async (context: any) => {
-    const sessionData = await _getSettionData(context);
-    const timecards = await GetTimecards(sessionData);
-    const initRows =  _getWorkListRows(timecards);
-    const initSummaryRows =  _getWorkListSummaryRows(timecards);
 
-    return {
-      props: { sessionData, initRows, initSummaryRows }
-    }
-}) satisfies GetServerSideProps<{ sessionData: SessionData, rows: WorkListRow[], initSummaryRows: WorkListSummaryRow[] }>
+const PDFDownloadLink = dynamic(
+    () => import("@react-pdf/renderer").then((mod) => mod. PDFDownloadLink),
+    {
+      ssr: false,
+      loading: () => <p>Loading...</p>,
+    },
+  );
 
-const WorkList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = ({sessionData, initRows, initSummaryRows}) => {
-    const [rows, setRows] = useState(initRows);
-    const [summaryRows, setSummaryRows] = useState(initSummaryRows);
-    const [isExporting, setIsExporting] = useState(false);
-    const gridRef = useRef<DataGridHandle>(null);
-
-    async function handleExportToPdf() {
-        flushSync(() => {
-          setIsExporting(true);
-        });
-    
-        await exportToPdf(gridRef.current!.element!, 'CommonFeatures.pdf');
-    
-        flushSync(() => {
-          setIsExporting(false);
-        });
-      }
-    const _onChangeDatePicker = async (date: Date | null) => {
-        if (date) {
-            // APIのURL
-            const url = process.env.NEXT_PUBLIC_SERVICE_URL_BASE + "api/_workList";
-            // リクエストパラメータ
-            const params = {
-                method: "POST",
-                // JSON形式のデータのヘッダー
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                // リクエストボディ
-                body: JSON.stringify({
-                    fromYearMonthDay: DateTime.fromJSDate(date).startOf("month").toFormat('yyyyMMdd'),
-                    toYearMonthDay: DateTime.fromJSDate(date).endOf("month").toFormat('yyyyMMdd'),
-                    employeeId: sessionData.employeeId
-                }),
-            };
-            // APIへのリクエスト
-            const response = await fetch(url, params);
-            const result = await response.json();
-
-            const timecards = result.param;
-            const rows = _getWorkListRows(timecards);
-            const summaryRows =  _getWorkListSummaryRows(timecards);
-            setRows(rows);
-            setSummaryRows(summaryRows);
-        }
-    }
-    const columns = useMemo(() => getColumns(), []);
-
-    return (
-        <div>
-            <CustumDatePicker onChangeDatePicker={_onChangeDatePicker}/>
-            <DataGrid
-                ref={gridRef}
-                columns={columns}
-                rows={rows}
-                bottomSummaryRows={summaryRows}
-            />
-            <button type="button" onClick={handleExportToPdf}>
-                PDF出力
-            </button>
-        </div>
-    )
-}
-export default WorkList
-
-async function _getSettionData(context: any) : Promise<SessionData> {
+  async function _getSettionData(context: any) : Promise<SessionData> {
     const session = await getServerSession(context.req, context.res, config);
 
     return {
@@ -230,3 +161,84 @@ function _getWorkListSummaryRows(timecards : Timecard[]) : WorkListSummaryRow[] 
         }
     ];
 }
+
+export const config = {
+    providers: authOptions.providers, // rest of your config
+} satisfies NextAuthOptions
+  
+export const getServerSideProps = (async (context: any) => {
+    const sessionData = await _getSettionData(context);
+    const timecards = await GetTimecards(sessionData);
+    const initRows =  _getWorkListRows(timecards);
+    const initSummaryRows =  _getWorkListSummaryRows(timecards);
+
+    return {
+      props: { sessionData, initRows, initSummaryRows }
+    }
+}) satisfies GetServerSideProps<{ sessionData: SessionData, rows: WorkListRow[], initSummaryRows: WorkListSummaryRow[] }>
+
+const WorkList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = ({sessionData, initRows, initSummaryRows}) => {
+    const [rows, setRows] = useState(initRows);
+    const [summaryRows, setSummaryRows] = useState(initSummaryRows);
+    const [isExporting, setIsExporting] = useState(false);
+    const gridRef = useRef<DataGridHandle>(null);
+
+    async function handleExportToPdf() {
+        flushSync(() => {
+          setIsExporting(true);
+        });
+    
+        await exportToPdf(gridRef.current!.element!, 'CommonFeatures.pdf');
+    
+        flushSync(() => {
+          setIsExporting(false);
+        });
+      }
+    const _onChangeDatePicker = async (date: Date | null) => {
+        if (date) {
+            // APIのURL
+            const url = process.env.NEXT_PUBLIC_SERVICE_URL_BASE + "api/_workList";
+            // リクエストパラメータ
+            const params = {
+                method: "POST",
+                // JSON形式のデータのヘッダー
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                // リクエストボディ
+                body: JSON.stringify({
+                    fromYearMonthDay: DateTime.fromJSDate(date).startOf("month").toFormat('yyyyMMdd'),
+                    toYearMonthDay: DateTime.fromJSDate(date).endOf("month").toFormat('yyyyMMdd'),
+                    employeeId: sessionData.employeeId
+                }),
+            };
+            // APIへのリクエスト
+            const response = await fetch(url, params);
+            const result = await response.json();
+
+            const timecards = result.param;
+            const rows = _getWorkListRows(timecards);
+            const summaryRows =  _getWorkListSummaryRows(timecards);
+            setRows(rows);
+            setSummaryRows(summaryRows);
+        }
+    }
+    const columns = useMemo(() => getColumns(), []);
+
+    return (
+        <div>
+            <CustumDatePicker onChangeDatePicker={_onChangeDatePicker}/>
+            <DataGrid
+                ref={gridRef}
+                columns={columns}
+                rows={rows}
+                bottomSummaryRows={summaryRows}
+            />
+            <PDFDownloadLink document={<PDF />} fileName="test1.pdf">
+                {({loading}) => (loading ? 'Loading document...' : 'クリックでPDFダウンロード')}
+            </PDFDownloadLink>
+        </div>
+    )
+}
+export default WorkList
+

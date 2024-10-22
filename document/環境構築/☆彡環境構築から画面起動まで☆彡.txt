@@ -78,4 +78,7 @@ npm i @fortawesome/fontawesome-free
 ・jspdf
 npm install jspdf jspdf-autotable
 
+・react-pdf
+npm install @react-pdf/renderer --save
+
 
