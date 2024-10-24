@@ -8,7 +8,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 //日本語化
 registerLocale("ja", ja);
 
-export const CustumDatePicker = (props): JSX.Element => {
+export const CustumDatePicker = (props: { onChangeDatePicker: (arg0: SetStateAction<Date>) => void; }, ref: any)  => {
   const [startDate, setStartDate] = useState(new Date());
 
   const onChangeDatePicker = (date: SetStateAction<Date> | null) => {
@@ -25,6 +25,7 @@ export const CustumDatePicker = (props): JSX.Element => {
       </div>
       <div className="inline-block mx-3 my-3">
           <ReactDatePicker
+            ref={ref} 
             locale="ja"
             selected={startDate}
             onChange={(date) => onChangeDatePicker(date)}

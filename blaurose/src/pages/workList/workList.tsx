@@ -1,4 +1,4 @@
-import { SetStateAction, useMemo, useRef, useState } from 'react';
+import { forwardRef, SetStateAction, useMemo, useRef, useState } from 'react';
 import 'react-data-grid/lib/styles.css';
 import DataGrid, { Column, DataGridHandle } from 'react-data-grid';
 import { SessionData, Timecard } from '@/types';
@@ -14,6 +14,7 @@ import { flushSync } from 'react-dom';
 //import { PDFDownloadLink } from '@react-pdf/renderer';
 import dynamic from "next/dynamic";
 import PDF from '@/components/pdf/PDF';
+import ReactDatePicker, { registerLocale } from 'react-datepicker'
 
 type WorkListRow  = {
     id? :   string,
@@ -34,7 +35,13 @@ type WorkListSummaryRow = {
     totalLateNightWorkTime?:   number,
     totalHolidayWorkTime?:   number,
 }
-
+type PDFData = {
+    yearMonth?: string,
+    shopName: string,
+    employeeName: string,
+    rows:WorkListRow[],
+    summaryRows:WorkListSummaryRow[]
+}
 const PDFDownloadLink = dynamic(
     () => import("@react-pdf/renderer").then((mod) => mod. PDFDownloadLink),
     {
@@ -177,23 +184,14 @@ export const getServerSideProps = (async (context: any) => {
     }
 }) satisfies GetServerSideProps<{ sessionData: SessionData, rows: WorkListRow[], initSummaryRows: WorkListSummaryRow[] }>
 
+const WrappedCustomInput = forwardRef(CustumDatePicker);
 const WorkList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = ({sessionData, initRows, initSummaryRows}) => {
     const [rows, setRows] = useState(initRows);
     const [summaryRows, setSummaryRows] = useState(initSummaryRows);
-    const [isExporting, setIsExporting] = useState(false);
+    const [pdfData, setPdfData] = useState({});
     const gridRef = useRef<DataGridHandle>(null);
+    const yearMonthRef = useRef<ReactDatePicker>(null);
 
-    async function handleExportToPdf() {
-        flushSync(() => {
-          setIsExporting(true);
-        });
-    
-        await exportToPdf(gridRef.current!.element!, 'CommonFeatures.pdf');
-    
-        flushSync(() => {
-          setIsExporting(false);
-        });
-      }
     const _onChangeDatePicker = async (date: Date | null) => {
         if (date) {
             // APIのURL
@@ -225,20 +223,37 @@ const WorkList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>>
     }
     const columns = useMemo(() => getColumns(), []);
 
+    function onClickPDFLink() {
+        setPdfData({
+            yearMonth: (yearMonthRef?.current?.input as HTMLInputElement).value,
+            shopName: sessionData.shopName,
+            employeeName: sessionData.employeeName,
+            rows:rows,
+            summaryRows:summaryRows
+        })
+    }
+
     return (
         <div>
-            <CustumDatePicker onChangeDatePicker={_onChangeDatePicker}/>
+            <WrappedCustomInput
+                ref={yearMonthRef}
+                onChangeDatePicker={_onChangeDatePicker}
+            />
             <DataGrid
                 ref={gridRef}
                 columns={columns}
                 rows={rows}
                 bottomSummaryRows={summaryRows}
             />
-            <PDFDownloadLink document={<PDF />} fileName="test1.pdf">
+            <PDFDownloadLink onClick={onClickPDFLink} document={<PDF pdfData={pdfData}/>}>
                 {({loading}) => (loading ? 'Loading document...' : 'クリックでPDFダウンロード')}
             </PDFDownloadLink>
         </div>
     )
 }
+
+
+// fileName={"勤怠表_" + ".pdf"}
+//pdfData={pdfData}
 export default WorkList
 

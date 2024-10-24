@@ -1,23 +1,10 @@
 import { Page, Text, View, Document, StyleSheet, Font } from "@react-pdf/renderer";
+import { formatDisplayTime } from "../util";
 
 Font.register({
   family: "NotoSansJP-Regular",
   src: "../../fonts/NotoSansJP-Regular.ttf",
 });
-
-// const styles = StyleSheet.create({
-//   page: {
-//     padding: 30,
-//     fontSize: 11,
-//     fontFamily: "Nasu-Bold",
-//   },
-//   section: {
-//     margin: 10,
-//     padding: 10,
-//     flexGrow: 1,
-//     fontFamily: "Nasu-Regular",
-//   },
-// });
 
 const styles = StyleSheet.create({
   page: {
@@ -45,38 +32,67 @@ const styles = StyleSheet.create({
     borderRightWidth: 0,
     borderBottomWidth: 0,
   },
-  tableRow: {
-    margin: "auto",
-    flexDirection: "row",
-  },
   tableColHeader: {
-    width: "20%",
+    width: "12.5%",
     borderStyle: "solid",
     borderWidth: 1,
     textAlign: "center",
     borderLeftWidth: 0,
     borderTopWidth: 0,
     fontWeight: "bold",
-    padding: 5,
+    padding: 2,
+  },
+  tableRow: {
+    margin: "auto",
+    flexDirection: "row",
+    height: "20px!important",
+
   },
   tableCol: {
-    width: "20%",
+    width: "12.5%",
+    height: "20px!important",
     borderStyle: "solid",
     borderWidth: 1,
     textAlign: "center",
     borderLeftWidth: 0,
     borderTopWidth: 0,
-    padding: 5,
+    padding: 2,
   },
   textVertical: {
     flexDirection: "column",
   },
-  company: {
-    marginTop: 10,
-  },
 });
 
-const data = [
+type WorkListRow  = {
+  id? :   string,
+  date?:   string,
+  stampedFromAt?:   string,
+  stampedToAt?:   string,
+  restTime?:   number,
+  actualWorkingTime?:   number,
+  overtime?:   number,
+  lateNightWorkTime?:   number,
+  holidayWorkTime?:   number,
+}
+type WorkListSummaryRow = {
+  id?: string,
+  totalRestTime?:   number,
+  totalActualWorkingTime?:   number,
+  totalOvertime?:   number,
+  totalLateNightWorkTime?:   number,
+  totalHolidayWorkTime?:   number,
+}
+type PDFParam = {
+  pdfData?: PDFData,
+}
+type PDFData = {
+  yearMonth?: string,
+  shopName: string,
+  employeeName: string,
+  rows:WorkListRow[],
+  summaryRows:WorkListSummaryRow[]
+}
+const workListdata = [
   {
     title: "発注日",
     value: "2024/4/01",
@@ -88,267 +104,63 @@ const data = [
         width: "10,000",
         length: "10,000",
       },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
-      {
-        name: "サンプル1",
-        surface: "1",
-        thickness: "式",
-        width: "10,000",
-        length: "10,000",
-      },
     ],
   },
 ];
-export default function PDF() {
+export default function PDF(props : PDFParam) {
+  debugger;
+  const pdfData = props.pdfData as PDFData
+  if (Object.keys(pdfData).length === 0) {
+    return (
+        <Document>
+        </Document>
+    )
+  }
   return (
-    <Document>
+    <Document title='My PDF'>
       <Page style={styles.page} size="A4">
         <View>
           <Text style={styles.header}>出勤簿</Text>
         </View>
         <View style={styles.details}>
-          {data.map((detail, index) => (
-            <View style={styles.detailItem} key={index}>
+            <View style={styles.detailItem}>
               <View style={styles.textVertical}>
-                <Text>2024年10月   ブラオローゼ大津店   山本正樹</Text>
+                <Text>{pdfData.yearMonth}&emsp;{pdfData.shopName}&emsp;{pdfData.employeeName}</Text>
               </View>
+            </View>
+        </View>
+        <View style={styles.itemsTable}>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableColHeader}>日付</Text>
+            <Text style={styles.tableColHeader}>出社</Text>
+            <Text style={styles.tableColHeader}>退社</Text>
+            <Text style={styles.tableColHeader}>休憩</Text>
+            <Text style={styles.tableColHeader}>総労働</Text>
+            <Text style={styles.tableColHeader}>残業</Text>
+            <Text style={styles.tableColHeader}>深夜労働</Text>
+            <Text style={styles.tableColHeader}>休日労働</Text>
+          </View>
+          {pdfData.rows.map((item, index) => (
+            <View style={styles.tableRow} key={index}>
+              <Text style={styles.tableCol}>{item.date}</Text>
+              <Text style={styles.tableCol}>{item.stampedFromAt}</Text>
+              <Text style={styles.tableCol}>{item.stampedToAt}</Text>
+              <Text style={styles.tableCol}>{formatDisplayTime(item.restTime)}</Text>
+              <Text style={styles.tableCol}>{formatDisplayTime(item.actualWorkingTime)}</Text>
+              <Text style={styles.tableCol}>{formatDisplayTime(item.overtime)}</Text>
+              <Text style={styles.tableCol}>{formatDisplayTime(item.lateNightWorkTime)}</Text>
+              <Text style={styles.tableCol}>{formatDisplayTime(item.holidayWorkTime)}</Text>
             </View>
           ))}
-        </View>
-        <View>
-          <View style={styles.itemsTable}>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableColHeader}>概要</Text>
-              <Text style={styles.tableColHeader}>数量</Text>
-              <Text style={styles.tableColHeader}>単位</Text>
-              <Text style={styles.tableColHeader}>単価</Text>
-              <Text style={styles.tableColHeader}>金額</Text>
-            </View>
-            {data[0].items.map((item, index) => (
-              <View style={styles.tableRow} key={index}>
-                <Text style={styles.tableCol}>{item.name}</Text>
-                <Text style={styles.tableCol}>{item.surface}</Text>
-                <Text style={styles.tableCol}>{item.thickness}</Text>
-                <Text style={styles.tableCol}>{item.width}</Text>
-                <Text style={styles.tableCol}>{item.length}</Text>
-              </View>
-            ))}
+          <View style={styles.tableRow}>
+            <Text style={styles.tableCol}>合計</Text>
+            <Text style={styles.tableCol}></Text>
+            <Text style={styles.tableCol}></Text>
+            <Text style={styles.tableCol}>{formatDisplayTime(pdfData.summaryRows[0].totalRestTime)}</Text>
+            <Text style={styles.tableCol}>{formatDisplayTime(pdfData.summaryRows[0].totalActualWorkingTime)}</Text>
+            <Text style={styles.tableCol}>{formatDisplayTime(pdfData.summaryRows[0].totalOvertime)}</Text>
+            <Text style={styles.tableCol}>{formatDisplayTime(pdfData.summaryRows[0].totalLateNightWorkTime)}</Text>
+            <Text style={styles.tableCol}>{formatDisplayTime(pdfData.summaryRows[0].totalHolidayWorkTime)}</Text>
           </View>
         </View>
       </Page>
