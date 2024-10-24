@@ -108,7 +108,6 @@ const workListdata = [
   },
 ];
 export default function PDF(props : PDFParam) {
-  debugger;
   const pdfData = props.pdfData as PDFData
   if (Object.keys(pdfData).length === 0) {
     return (
