@@ -1,11 +1,11 @@
 import { Page, Text, View, Document, StyleSheet, Font } from "@react-pdf/renderer";
 import { formatDisplayTime } from "../util";
+import { WorkListPdf, WorkListPdfParam } from "@/models/workList/workListModels";
 
 Font.register({
   family: "NotoSansJP-Regular",
-  src: "../../fonts/NotoSansJP-Regular.ttf",
+  src: "../blaurose/public/fonts/NotoSansJP-Regular.ttf",
 });
-
 const styles = StyleSheet.create({
   page: {
     padding: 10,
@@ -63,35 +63,7 @@ const styles = StyleSheet.create({
   },
 });
 
-type WorkListRow  = {
-  id? :   string,
-  date?:   string,
-  stampedFromAt?:   string,
-  stampedToAt?:   string,
-  restTime?:   number,
-  actualWorkingTime?:   number,
-  overtime?:   number,
-  lateNightWorkTime?:   number,
-  holidayWorkTime?:   number,
-}
-type WorkListSummaryRow = {
-  id?: string,
-  totalRestTime?:   number,
-  totalActualWorkingTime?:   number,
-  totalOvertime?:   number,
-  totalLateNightWorkTime?:   number,
-  totalHolidayWorkTime?:   number,
-}
-type PDFParam = {
-  pdfData?: PDFData,
-}
-type PDFData = {
-  yearMonth?: string,
-  shopName: string,
-  employeeName: string,
-  rows:WorkListRow[],
-  summaryRows:WorkListSummaryRow[]
-}
+
 const workListdata = [
   {
     title: "発注日",
@@ -107,16 +79,16 @@ const workListdata = [
     ],
   },
 ];
-export default function PDF(props : PDFParam) {
-  const pdfData = props.pdfData as PDFData
+export default function PDF(props : WorkListPdfParam) {
+  const pdfData = props.pdfData as WorkListPdf
   if (Object.keys(pdfData).length === 0) {
     return (
-        <Document>
+      <Document>
         </Document>
     )
   }
   return (
-    <Document title='My PDF'>
+    <Document title={pdfData.title}>
       <Page style={styles.page} size="A4">
         <View>
           <Text style={styles.header}>出勤簿</Text>

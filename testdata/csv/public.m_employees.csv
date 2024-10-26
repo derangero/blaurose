@@ -1,2 +1,3 @@
 "employee_id","employee_code","employee_name","company_joined_at","hourly_wage_amount","shop_id","stamp_delete","created_at","updated_at"
-"3","1   ","てすと太郎",,,"1",False,2024/10/12 21:26:08.544,2024/10/12 21:25:48.045
+"cm2iv0hge0003g2iiz9458j46","0001","山本正樹",,,"3",False,2024/10/21 19:14:16.670,2024/10/21 19:13:32.972
+"cm2iv10py0004g2iiu6f6v74q","0002","テストユーザー01",,,"3",False,2024/10/21 19:14:41.639,2024/10/21 19:17:28.890

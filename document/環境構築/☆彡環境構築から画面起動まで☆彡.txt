@@ -81,4 +81,13 @@ npm install jspdf jspdf-autotable
 ・react-pdf
 npm install @react-pdf/renderer --save
 
+・dotenv-cli
+Next.jsは.env、.env.localを自動的に読み込む（.env.localが優先）が、Prismaはデフォルトだと.envしか読み込まないので、.env.localを読み込むためにdotenv-cliを使う
 
+npm install --save-dev dotenv-cli
+
+・axios
+npm i axios
+
+・downloadjs
+npm i downloadjs

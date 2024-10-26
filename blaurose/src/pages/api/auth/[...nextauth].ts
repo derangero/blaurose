@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { SelectSessionDataByLoginIdAndPassword } from '../../../../prisma/user/dba_user'
+import { SelectSessionDataByLoginIdAndPassword } from '../../../repositories/user/dba_user'
 
 export default NextAuth({
   providers: [

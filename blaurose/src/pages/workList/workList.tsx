@@ -1,56 +1,108 @@
-import { forwardRef, SetStateAction, useMemo, useRef, useState } from 'react';
 import 'react-data-grid/lib/styles.css';
+import { forwardRef, SetStateAction, useMemo, useRef, useState } from 'react';
 import DataGrid, { Column, DataGridHandle } from 'react-data-grid';
-import { SessionData, Timecard } from '@/types';
 import { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import { getServerSession, NextAuthOptions } from 'next-auth';
 import authOptions from "../api/auth/[...nextauth]"
 import { DateTime } from 'luxon';
 import { CustumDatePicker } from '@/components/date/CustumDatePicker';
-import { formatDisplayTime } from '../../components/util'
-import { exportToPdf } from '../../components/export/exportUtils'
-import { GetTimecards } from '../api/_workList';
-import { flushSync } from 'react-dom';
-//import { PDFDownloadLink } from '@react-pdf/renderer';
-import dynamic from "next/dynamic";
-import PDF from '@/components/pdf/PDF';
+import { formatDisplayTime } from '@/components/util'
 import ReactDatePicker, { registerLocale } from 'react-datepicker'
+import { MDBBtn } from 'mdb-react-ui-kit';
+import { SessionData, Timecard } from '@/types';
+import { WorkListRow,WorkListSummaryRow } from '@/models/workList/workListModels';
+import { GetTimecardsFromSession } from '@/services/workList/workListService';
+import download from 'downloadjs'
 
-type WorkListRow  = {
-    id? :   string,
-    date?:   string,
-    stampedFromAt?:   string,
-    stampedToAt?:   string,
-    restTime?:   number,
-    actualWorkingTime?:   number,
-    overtime?:   number,
-    lateNightWorkTime?:   number,
-    holidayWorkTime?:   number,
-}
-type WorkListSummaryRow = {
-    id?: string,
-    totalRestTime?:   number,
-    totalActualWorkingTime?:   number,
-    totalOvertime?:   number,
-    totalLateNightWorkTime?:   number,
-    totalHolidayWorkTime?:   number,
-}
-type PDFData = {
-    yearMonth?: string,
-    shopName: string,
-    employeeName: string,
-    rows:WorkListRow[],
-    summaryRows:WorkListSummaryRow[]
-}
-const PDFDownloadLink = dynamic(
-    () => import("@react-pdf/renderer").then((mod) => mod. PDFDownloadLink),
-    {
-      ssr: false,
-      loading: () => <p>Loading...</p>,
-    },
-  );
+export const config = {
+    providers: authOptions.providers, // rest of your config
+} satisfies NextAuthOptions
+  
+export const getServerSideProps = (async (context: any) => {
+    const sessionData = await _getSettionData(context);
+    const timecards = await GetTimecardsFromSession(sessionData);
+    const initRows =  getWorkListRows(DateTime.now().endOf("month"), timecards);
+    const initSummaryRows =  getWorkListSummaryRows(timecards);
 
-  async function _getSettionData(context: any) : Promise<SessionData> {
+    return {
+      props: { sessionData, initRows, initSummaryRows }
+    }
+}) satisfies GetServerSideProps<{ sessionData: SessionData, rows: WorkListRow[], initSummaryRows: WorkListSummaryRow[] }>
+
+
+const WorkList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = ({sessionData, initRows, initSummaryRows}) => {
+    const [rows, setRows] = useState(initRows);
+    const [summaryRows, setSummaryRows] = useState(initSummaryRows);
+    const gridRef = useRef<DataGridHandle>(null);
+    const yearMonthRef = useRef<ReactDatePicker>(null);
+    const WrappedCustomInput = forwardRef(CustumDatePicker);
+    
+    const _onChangeDatePicker = async (date: Date | null) => {
+        if (date) {
+            const axios = require('axios');
+            const fromYearMonthDay = DateTime.fromJSDate(date).startOf("month").toFormat('yyyyMMdd');
+            const toYearMonthDay = DateTime.fromJSDate(date).endOf("month").toFormat('yyyyMMdd');
+            await axios.get("/api/workList/getTimecards", {
+                    params: {
+                        fromYearMonthDay: fromYearMonthDay,
+                        toYearMonthDay: toYearMonthDay,
+                        employeeId: sessionData.employeeId,
+                    },
+                }
+            ).then((response: { data: { param: any; }; })=>{
+                const timecards = response.data ? response.data.param : null;
+                const rows = getWorkListRows(DateTime.fromJSDate(date).endOf("month"), timecards);
+                const summaryRows =  getWorkListSummaryRows(timecards);
+                setRows(rows);
+                setSummaryRows(summaryRows);
+            }).catch((error: string) => {
+                console.log(error);
+            });
+        }
+    }
+    const columns = useMemo(() => getColumns(), []);
+
+    async function onClickPdfButton() {
+        await require('axios').get("/api/workList/exportPdf", {
+            responseType: 'blob', // had to add this one here
+                params: {
+                    fromYearMonthDay: DateTime.fromJSDate(yearMonthRef?.current?.props.selected).startOf("month").toFormat('yyyyMMdd'),
+                    toYearMonthDay: DateTime.fromJSDate(yearMonthRef?.current?.props.selected).endOf("month").toFormat('yyyyMMdd'),
+                    yearMonthDay: DateTime.fromJSDate(yearMonthRef?.current?.props.selected).toFormat('yyyy年MM月'),
+                    employeeId: sessionData.employeeId,
+                    employeeName: sessionData.employeeName,
+                    shopName: sessionData.shopName,
+                },
+            }
+        ).then((response)=>{
+            const pdfFileName = decodeURIComponent(response.headers['content-disposition'].replace('filename=',''))
+            download(response.data, pdfFileName, response.headers['content-type']);
+            //window.open(URL.createObjectURL(response.data));
+        }).catch((error: string) => {
+            console.log(error);
+        });
+    }
+
+    return (
+        <div>
+            <WrappedCustomInput
+                ref={yearMonthRef}
+                onChangeDatePicker={_onChangeDatePicker}
+            />
+            <DataGrid
+                ref={gridRef}
+                columns={columns}
+                rows={rows}
+                bottomSummaryRows={summaryRows}
+            />
+            <div>
+                <MDBBtn className="mt-3 mb-3 vw-25" color='info' type="submit" onClick={onClickPdfButton}>PDF出力</MDBBtn>
+            </div>
+        </div>
+    )
+}
+
+async function _getSettionData(context: any) : Promise<SessionData> {
     const session = await getServerSession(context.req, context.res, config);
 
     return {
@@ -61,45 +113,44 @@ const PDFDownloadLink = dynamic(
    }
 }
 
-function _getWorkListRows(timecards : Timecard[]) {
+export function getWorkListRows(endOfMonthDate: DateTime, timecards : Timecard[]) {
     const rows: WorkListRow[] = [];
+    let timecardMap = null
     if (timecards.length > 0) {
-        const toYearMonthDay = DateTime.fromJSDate(new Date(timecards[0].stampedFrom_at)).endOf('month');
-        const timecardMap = timecards.reduce((p: Timecard, c: { stamped_on: number; }
-            ) => Object.defineProperty(p, c.stamped_on, { value: c }), {}); 
-
-        for (let i = 1; i < parseInt(toYearMonthDay.toFormat('dd')) + 1; i++) {
-            const targetDate = DateTime.local(toYearMonthDay.year, toYearMonthDay.month, i);
-            const timecard = timecardMap[parseInt(targetDate.toFormat('yyyyMMdd'))];
-            let stampedFromAt = "";
-            let stampedToAt = "";
-            let restTime = null;
-            let actualWorkingTime = null;
-            let overtime = null;
-            let lateNightWorkTime = null;
-            let holidayWorkTime = null;
-            if (timecard) {
-                stampedFromAt = timecard ? DateTime.fromJSDate(new Date(timecard.stampedFrom_at)).toFormat('HH:mm') : "";
-                stampedToAt = timecard ? DateTime.fromJSDate(new Date(timecard.stampedTo_at)).toFormat('HH:mm') : "";
-                restTime = timecard.rest_minutes_time;
-                actualWorkingTime = timecard.actual_working_minutes_time;
-                overtime = timecard.overtime;
-                lateNightWorkTime = timecard.late_night_work_time;
-                holidayWorkTime = timecard.holiday_work_time;
-            }
-
-            rows.push({
-                id: targetDate.toFormat('yyyyMMdd'),
-                date: targetDate.toFormat('MM/dd（EEE）'),
-                stampedFromAt: stampedFromAt,
-                stampedToAt: stampedToAt,
-                restTime: restTime,
-                actualWorkingTime: actualWorkingTime,
-                overtime: overtime,
-                lateNightWorkTime: lateNightWorkTime,
-                holidayWorkTime: holidayWorkTime
-            });
+        timecardMap = timecards.reduce((p: Timecard, c: { stamped_on: number; }
+        ) => Object.defineProperty(p, c.stamped_on, { value: c }), {}); 
+    }
+    for (let i = 1; i < parseInt(endOfMonthDate.toFormat('dd')) + 1; i++) {
+        const targetDate = DateTime.local(endOfMonthDate.year, endOfMonthDate.month, i);
+        const timecard = timecardMap ? timecardMap[parseInt(targetDate.toFormat('yyyyMMdd'))] : null;
+        let stampedFromAt = "";
+        let stampedToAt = "";
+        let restTime = null;
+        let actualWorkingTime = null;
+        let overtime = null;
+        let lateNightWorkTime = null;
+        let holidayWorkTime = null;
+        if (timecard) {
+            stampedFromAt = timecard.stampedFrom_at ? DateTime.fromJSDate(new Date(timecard.stampedFrom_at)).toFormat('HH:mm') : "";
+            stampedToAt = timecard.stampedTo_at ? DateTime.fromJSDate(new Date(timecard.stampedTo_at)).toFormat('HH:mm') : "";
+            restTime = timecard.rest_minutes_time;
+            actualWorkingTime = timecard.actual_working_minutes_time;
+            overtime = timecard.overtime;
+            lateNightWorkTime = timecard.late_night_work_time;
+            holidayWorkTime = timecard.holiday_work_time;
         }
+
+        rows.push({
+            id: targetDate.toFormat('yyyyMMdd'),
+            date: targetDate.toFormat('MM/dd（EEE）'),
+            stampedFromAt: stampedFromAt,
+            stampedToAt: stampedToAt,
+            restTime: restTime,
+            actualWorkingTime: actualWorkingTime,
+            overtime: overtime,
+            lateNightWorkTime: lateNightWorkTime,
+            holidayWorkTime: holidayWorkTime
+        });
     }
     return rows;
 }
@@ -132,7 +183,7 @@ function getColumns(): readonly Column<WorkListRow, WorkListSummaryRow>[] {
     ];
 }
 
-function _getWorkListSummaryRows(timecards : Timecard[]) : WorkListSummaryRow[] {
+export function getWorkListSummaryRows(timecards : Timecard[]) : WorkListSummaryRow[] {
     let totalRestTime = 0;
     let totalActualWorkingTime = 0;
     let totalOvertime = 0;
@@ -169,91 +220,5 @@ function _getWorkListSummaryRows(timecards : Timecard[]) : WorkListSummaryRow[] 
     ];
 }
 
-export const config = {
-    providers: authOptions.providers, // rest of your config
-} satisfies NextAuthOptions
-  
-export const getServerSideProps = (async (context: any) => {
-    const sessionData = await _getSettionData(context);
-    const timecards = await GetTimecards(sessionData);
-    const initRows =  _getWorkListRows(timecards);
-    const initSummaryRows =  _getWorkListSummaryRows(timecards);
-
-    return {
-      props: { sessionData, initRows, initSummaryRows }
-    }
-}) satisfies GetServerSideProps<{ sessionData: SessionData, rows: WorkListRow[], initSummaryRows: WorkListSummaryRow[] }>
-
-const WrappedCustomInput = forwardRef(CustumDatePicker);
-const WorkList: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = ({sessionData, initRows, initSummaryRows}) => {
-    const [rows, setRows] = useState(initRows);
-    const [summaryRows, setSummaryRows] = useState(initSummaryRows);
-    const [pdfData, setPdfData] = useState({});
-    const gridRef = useRef<DataGridHandle>(null);
-    const yearMonthRef = useRef<ReactDatePicker>(null);
-
-    const _onChangeDatePicker = async (date: Date | null) => {
-        if (date) {
-            // APIのURL
-            const url = process.env.NEXT_PUBLIC_SERVICE_URL_BASE + "api/_workList";
-            // リクエストパラメータ
-            const params = {
-                method: "POST",
-                // JSON形式のデータのヘッダー
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                // リクエストボディ
-                body: JSON.stringify({
-                    fromYearMonthDay: DateTime.fromJSDate(date).startOf("month").toFormat('yyyyMMdd'),
-                    toYearMonthDay: DateTime.fromJSDate(date).endOf("month").toFormat('yyyyMMdd'),
-                    employeeId: sessionData.employeeId
-                }),
-            };
-            // APIへのリクエスト
-            const response = await fetch(url, params);
-            const result = await response.json();
-
-            const timecards = result.param;
-            const rows = _getWorkListRows(timecards);
-            const summaryRows =  _getWorkListSummaryRows(timecards);
-            setRows(rows);
-            setSummaryRows(summaryRows);
-        }
-    }
-    const columns = useMemo(() => getColumns(), []);
-
-    function onClickPDFLink() {
-        setPdfData({
-            yearMonth: (yearMonthRef?.current?.input as HTMLInputElement).value,
-            shopName: sessionData.shopName,
-            employeeName: sessionData.employeeName,
-            rows:rows,
-            summaryRows:summaryRows
-        })
-    }
-
-    return (
-        <div>
-            <WrappedCustomInput
-                ref={yearMonthRef}
-                onChangeDatePicker={_onChangeDatePicker}
-            />
-            <DataGrid
-                ref={gridRef}
-                columns={columns}
-                rows={rows}
-                bottomSummaryRows={summaryRows}
-            />
-            <PDFDownloadLink onClick={onClickPDFLink} document={<PDF pdfData={pdfData}/>}>
-                {({loading}) => (loading ? 'Loading document...' : 'クリックでPDFダウンロード')}
-            </PDFDownloadLink>
-        </div>
-    )
-}
-
-
-// fileName={"勤怠表_" + ".pdf"}
-//pdfData={pdfData}
 export default WorkList
 

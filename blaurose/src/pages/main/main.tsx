@@ -8,8 +8,7 @@ import { GetServerSideProps, InferGetServerSidePropsType, NextApiRequest, NextAp
 import authOptions from "../api/auth/[...nextauth]"
 import { DateTime,Settings } from "luxon";
 import { MDBBtn, MDBCol } from 'mdb-react-ui-kit';
-import { FindByStampedOnAndEmployeeId, FindPreviousByStampedOnAndEmployeeId, UpdateByStampedOnAndEmployeeId, UpsertByStampedOnAndEmployeeId } from '../../../prisma/timecard/dba_timecard'
-import { SessionData } from '@/types';
+import { FindByStampedOnAndEmployeeId, FindPreviousByStampedOnAndEmployeeId, UpdateByStampedOnAndEmployeeId, UpsertByStampedOnAndEmployeeId } from '@/repositories/timecard/dba_timecard'
 
 export const config = {
   providers: authOptions.providers, // rest of your config
@@ -17,7 +16,6 @@ export const config = {
 
 export const getServerSideProps = (async (context: any) => {
   const session = await getServerSession(context.req, context.res, config)
-  //Settings.defaultLocale = 'ja';
   const nowDate = DateTime.now();
   
   const shopCode = session?.user.name.employee.shop.shop_code;
@@ -58,18 +56,16 @@ export const getServerSideProps = (async (context: any) => {
   return {
     props: { sessionData }
   }
-}) satisfies GetServerSideProps<{ sessionData: SessionData }>
+})
+// satisfies GetServerSideProps<{ sessionData: SessionData }>
 
 export default function Main({
   sessionData,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-
   const [postError, setPostError] = useState("");
   const [stampedFromAt, setStampedFromAt] = useState(sessionData.stampedFromAt);
   const [stampedToAt, setStampedToAt] = useState(sessionData.stampedToAt);
   const [stampedByPreviousMark, setStampedByPreviousMark] = useState(sessionData.stampedByPreviousMark);
-  const displayDate = DateTime.local().toFormat('yyyy/M/d（EEE）');
-  const displayTime = DateTime.local().toFormat('HH:mm');
   const [date, setDate] = useState([])
   const [time, setTime] = useState([])
 
@@ -95,68 +91,51 @@ export default function Main({
   const submitHandler = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
 
-    const res = await fetch("http://localhost:3000/api/_stamping", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
+    await require('axios').post("/api/main/stamp", {
+        params: {
         },
-        body: JSON.stringify({
-        })
-    });
-
-    //api側のレスポンスを受け取る
-    const data = await res.json();
-    if(data) {
-      setStampedFromAt(data.param.stampedFromAt);
-      setStampedToAt(data.param.stampedToAt);
-      if (data.param.stampedByPreviousMark) {
-        setStampedByPreviousMark("（本日）");
-      } else {
-        // none
       }
-    }else{
-        setPostError(data.message);
-    }
-};
+    ).then((response)=>{
+      const result = response.data;
+      if(result) {
+        setStampedFromAt(result.stampedFromAt);
+        setStampedToAt(result.stampedToAt);
+        if (result.stampedByPreviousMark) {
+          setStampedByPreviousMark("（本日）");
+        }
+      }
+    }).catch((error: string) => {
+        console.log(error);
+    });
+  };
   return (
     <main>
-      <div className="d-flex align-items-start bg-body-tertiary mb-3 ml-5 mt-3" style={{ height: "200px" }}>
-        <MDBCol className='fs-5 mr-5 h-100'>
-        <div className='card h-100'>
-          <div className='card-body'>
-            <div>{date}</div>
-            <div>{time}</div>
-            <div>
-              <form onSubmit={submitHandler}>
-                <div>
-                  <MDBBtn className="mt-3 mb-3 w-50" color='info' size='lg' type="submit">打刻する</MDBBtn>
-                </div>
-              </form>
+      <div className="align-items-start bg-body-tertiary mb-3 ml-5 mt-3 main-custom-grid">
+          <div className='card h-100 mr-5'>
+            <div className='card-body'>
+              <div>{date}</div>
+              <div className="mb-3">{time}</div>
+              <div>開始時刻：{stampedFromAt}  {stampedByPreviousMark}</div>
+              <div>終了時刻：{stampedToAt}</div>
+              <div>
+                <form onSubmit={submitHandler}>
+                  <div>
+                    <MDBBtn className="mt-3 mb-3 vw-50" color='info' size='lg' type="submit">打刻する</MDBBtn>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-        <div>
-          <button className="mt-5 ml-5" onClick={() => signOut()}>サインアウト</button>
-        </div>
-        </MDBCol>
-        <MDBCol className='fs-5 mr-5 h-100'>
-        <div className='card h-100'>
-          <div className='card-body'>
-            <div>{postError && "打刻エラー"}</div>
-            <div>開始時刻：{stampedFromAt}  {stampedByPreviousMark}</div>
-            <div>終了時刻：{stampedToAt}</div>
-          </div>
-        </div>
-        </MDBCol>
-        <MDBCol className="mr-5 h-100">
-        <div className='card h-100'>
+        <div className='card h-100 mr-5'>
           <div className='card-body'>
             <div>店舗コード：{sessionData.shopCode}</div>
             <div>店舗名：{sessionData.shopName}</div>
             <div>氏名：{sessionData.employeeName}</div>
+            <div>
+              <MDBBtn className="mt-5 vw-50" color='secondary' onClick={() => signOut()}>ログアウト</MDBBtn>
+            </div>
           </div>
         </div>
-        </MDBCol>
       </div>
     </main>
   )
@@ -164,4 +143,5 @@ export default function Main({
 Main.displayName = "Main"
 //export default Main;
 //export default dynamic(() => Promise.resolve(Main), { ssr: false });
+
 

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "migrate:postgres": "dotenv -e .env.development -- npx prisma migrate dev --name postgres-init"    
+    "migrate:postgres": "dotenv -e .env.development -- npx prisma migrate dev --name postgres-init"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
@@ -28,7 +28,9 @@
     "luxon": "^3.5.0",
     "mdb-react-ui-kit": "^9.0.0",
     "next": "14.2.13",
+    "next-api-decorators": "^2.0.2",
     "next-auth": "^4.24.8",
+    "path-to-regexp": "^6.3.0",
     "react": "^18",
     "react-bootstrap": "^2.10.5",
     "react-data-grid": "^7.0.0-beta.47",
@@ -43,6 +45,7 @@
     "sass": "^1.79.5"
   },
   "devDependencies": {
+    "@types/downloadjs": "^1.4.6",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20",
     "@types/react": "^18",

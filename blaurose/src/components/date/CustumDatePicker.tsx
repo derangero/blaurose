@@ -8,12 +8,12 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 //日本語化
 registerLocale("ja", ja);
 
-export const CustumDatePicker = (props: { onChangeDatePicker: (arg0: SetStateAction<Date>) => void; }, ref: any)  => {
+export const CustumDatePicker = (props: { onChangeDatePicker: (arg0: Date) => void; }, ref: any)  => {
   const [startDate, setStartDate] = useState(new Date());
 
-  const onChangeDatePicker = (date: SetStateAction<Date> | null) => {
-    setStartDate(date);
+  const onChangeDatePicker = (date: Date | null) => {
     if (date) {
+      setStartDate(date);
       props.onChangeDatePicker(date);
     }
   }
