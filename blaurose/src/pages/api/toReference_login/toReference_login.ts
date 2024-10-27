@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken"
 import { SelectByLoginId } from '@/repositories/user/dba_user'
 
 const NEXT_PUBLIC_SECRET_KEY = "abcdefg"
-const Login = async (
+const Login2 = async (
     req: { body: { login_id: any; password: any } },
     res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { message: string; token?: any; param?: any }): any; new(): any } } }) => {
         try {
@@ -36,4 +36,4 @@ const Login = async (
     }
 }
 
-export default Login	
+export default Login2	

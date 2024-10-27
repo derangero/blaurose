@@ -1,25 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DateTime,Settings } from "luxon";
 import {
   MDBContainer,
   MDBNavbar,
-  MDBNavbarBrand,
   MDBNavbarToggler,
   MDBIcon,
   MDBNavbarNav,
   MDBNavbarItem,
   MDBNavbarLink,
-  MDBBtn,
-  MDBDropdown,
-  MDBDropdownToggle,
-  MDBDropdownMenu,
-  MDBDropdownItem,
   MDBCollapse,
 } from 'mdb-react-ui-kit';
-import { useRouter } from "next/router";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { userDataState } from "../../recoil/userData"
-import dynamic from 'next/dynamic';
+import { toast } from 'react-toastify';
 
 const Header = () => {
   const [openBasic, setOpenBasic] = useState(false);
@@ -63,4 +54,3 @@ const Header = () => {
   );
 };
 export default Header;
-//export default dynamic(() => Promise.resolve(Header), { ssr: false });

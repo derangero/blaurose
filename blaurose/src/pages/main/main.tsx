@@ -41,16 +41,10 @@ export const getServerSideProps = (async (context: any) => {
   if (timecard) {
     if (timecard.stampedFrom_at) {
       sessionData.stampedFromAt = DateTime.fromJSDate(timecard.stampedFrom_at).toFormat('HH:mm');
-    } else {
-      //none
     }
     if (timecard.stampedTo_at) {
       sessionData.stampedToAt = DateTime.fromJSDate(timecard.stampedTo_at).toFormat('HH:mm');
-    } else {
-      //none
     }
-  } else {
-    //none
   }
 
   return {
@@ -108,6 +102,7 @@ export default function Main({
         console.log(error);
     });
   };
+
   return (
     <main>
       <div className="align-items-start bg-body-tertiary mb-3 ml-5 mt-3 main-custom-grid">
