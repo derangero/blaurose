@@ -1,102 +1,100 @@
 import React, { useEffect, useRef, useState } from 'react';
-import 'mdb-react-ui-kit/dist/css/mdb.min.css';
-import "@fortawesome/fontawesome-free/css/all.min.css";
-import { getServerSession } from 'next-auth';
 import { signOut, useSession } from 'next-auth/react';
-import type { NextAuthOptions } from "next-auth"
-import { GetServerSideProps, InferGetServerSidePropsType, NextApiRequest, NextApiResponse } from 'next';
-import authOptions from "../api/auth/[...nextauth]"
+import { InferGetServerSidePropsType, NextApiRequest, NextApiResponse } from 'next';
 import { DateTime,Settings } from "luxon";
 import { MDBBtn, MDBCol } from 'mdb-react-ui-kit';
-import { FindByStampedOnAndEmployeeId, FindPreviousByStampedOnAndEmployeeId, UpdateByStampedOnAndEmployeeId, UpsertByStampedOnAndEmployeeId } from '@/repositories/timecard/dba_timecard'
-
-export const config = {
-  providers: authOptions.providers, // rest of your config
-} satisfies NextAuthOptions
+import { FindByStampedOnAndEmployeeId, FindPreviousByStampedOnAndEmployeeId, findWorkingDataByStampedOnAndEmployeeId } from '@/repositories/timecard/dba_timecard'
+import { getServerSessionData } from '@/utils/session/sessionUtil';
+import { MDBBtnColor } from '@/types';
+import { isNullOrEmpty } from '@/utils/common/commonUtil';
+import { toast } from 'react-toastify';
 
 export const getServerSideProps = (async (context: any) => {
-  const session = await getServerSession(context.req, context.res, config)
-  const nowDate = DateTime.now();
-  
-  const shopCode = session?.user.name.employee.shop.shop_code;
-  const shopName = session?.user.name.employee.shop.shop_name;
-  const employeeName = session?.user.name.employee.employee_name;
-  const employeeId = session?.user.name.employee.employee_id;
-  const sessionData = {
-    shopCode: shopCode,
-    shopName: shopName,
-    employeeName: employeeName,
-    employeeId: employeeId,
-    stampedFromAt: "",
-    stampedToAt: "",
-    stampedByPreviousMark: ""
+  const sessionData = await getServerSessionData(context);
+  const today = DateTime.now();
+  let timecard = await FindByStampedOnAndEmployeeId(
+      today.toFormat('yyyyMMdd'),
+      sessionData.employeeId
+  )
+  // 前日分の日跨ぎ打刻用にタイムカード取得
+  if (!timecard){
+      timecard = await findWorkingDataByStampedOnAndEmployeeId(
+          today.minus({days:1}).toFormat('yyyyMMdd'),
+          sessionData.employeeId
+      )
   }
-  let timecard = await FindPreviousByStampedOnAndEmployeeId(nowDate.minus({days: 1}).toFormat('yyyyMMdd'), employeeId);
+  let initWorkStateMsg = "";
   if (timecard) {
-    sessionData.stampedByPreviousMark = "（前日）";
-  } else {
-    timecard = await FindByStampedOnAndEmployeeId(nowDate.toFormat('yyyyMMdd'), employeeId);
-  }
-
-  if (timecard) {
-    if (timecard.stampedFrom_at) {
-      sessionData.stampedFromAt = DateTime.fromJSDate(timecard.stampedFrom_at).toFormat('HH:mm');
+    if (timecard.work_start_at && !timecard.work_end_at) {
+      initWorkStateMsg = "勤務中";
     }
-    if (timecard.stampedTo_at) {
-      sessionData.stampedToAt = DateTime.fromJSDate(timecard.stampedTo_at).toFormat('HH:mm');
+    if (timecard.rest_start_at && !timecard.rest_end_at) {
+      initWorkStateMsg = "休憩中";
+    }
+    if (timecard.work_end_at) {
+      initWorkStateMsg = "勤務終了";
     }
   }
-
   return {
-    props: { sessionData }
+    props: { sessionData, initWorkStateMsg }
   }
 })
 // satisfies GetServerSideProps<{ sessionData: SessionData }>
 
-export default function Main({
-  sessionData,
+function Main({
+  sessionData, initWorkStateMsg
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [postError, setPostError] = useState("");
-  const [stampedFromAt, setStampedFromAt] = useState(sessionData.stampedFromAt);
-  const [stampedToAt, setStampedToAt] = useState(sessionData.stampedToAt);
-  const [stampedByPreviousMark, setStampedByPreviousMark] = useState(sessionData.stampedByPreviousMark);
-  const [date, setDate] = useState([])
-  const [time, setTime] = useState([])
+  // サーバーサイドで取得（CSRにしない）
+  // const { data: session, status } = useSession()
+  const nowDate = DateTime.now();
+  const [workStateMsg, setWorkStateMsg] = useState(initWorkStateMsg);
+
+  //suppressHydrationWarning ※SSRで乗り切る
+  const [date, setDate] = useState(nowDate.toFormat("yyyy年MM月dd日(EEE)"))
+  const [hourMinutesTime, setHourMinutesTime] = useState(nowDate.toFormat("HH:mm"))
+  const [secondTime, setSecondTime] = useState(nowDate.toFormat("ss"))
 
   useEffect(() => {
       setInterval(() => {
-      let d = new Date();
-      let year = d.getFullYear();
-      let month = d.getMonth() + 1;
-      let day = d.getDate();
-      let dayofweek = d.getDay();
-
-      const dayname = ['日','月','火','水','木','金','土'];
-
-      setDate(year + '年' + month + '月' + day + '日' + '（' + dayname[dayofweek] + '）');
-
-      let hour = d.getHours().toString().padStart(2, '0');
-      let minute = d.getMinutes().toString().padStart(2, '0');
-      setTime(hour + ':' + minute);
+        const nowDate = DateTime.now();
+        setDate(nowDate.toFormat("yyyy年MM月dd日(EEE)"));
+        setHourMinutesTime(nowDate.toFormat("HH:mm"));
+        setSecondTime(nowDate.toFormat("ss"))
       });
-
   },[])
 
-  const submitHandler = async (e: { preventDefault: () => void; }) => {
+  const submitHandler = async (e: { nativeEvent: any; preventDefault: () => void; }) => {
     e.preventDefault();
-
-    await require('axios').post("/api/main/stamp", {
+    const uri = e.nativeEvent.submitter.name;
+    await require('axios').post(process.env.NEXT_PUBLIC_SERVICE_URL_BASE + "api/main/" + uri, {
         params: {
         },
       }
-    ).then((response)=>{
-      const result = response.data;
-      if(result) {
-        setStampedFromAt(result.stampedFromAt);
-        setStampedToAt(result.stampedToAt);
-        if (result.stampedByPreviousMark) {
-          setStampedByPreviousMark("（本日）");
+    ).then((response: { data: any; })=>{
+      const errorMsg = response.data;
+      if(!errorMsg) {
+        switch (uri) {
+          case 'startWork':
+            setWorkStateMsg('勤務中');
+            toast.success('勤務開始しました。');
+            break;
+          case 'endWork':
+            setWorkStateMsg('勤務終了');
+            toast.success('勤務終了しました。');
+            break;
+          case 'startRest':
+            setWorkStateMsg('休憩中');
+            toast.success('休憩開始しました。');
+            break;
+          case 'endRest':
+            setWorkStateMsg('勤務中');
+            toast.success('休憩終了しました。');
+            break;
+          default:
+            break;
         }
+      } else {
+        toast.error(errorMsg);
       }
     }).catch((error: string) => {
         console.log(error);
@@ -108,35 +106,54 @@ export default function Main({
       <div className="align-items-start bg-body-tertiary mb-3 ml-5 mt-3 main-custom-grid">
           <div className='card h-100 mr-5'>
             <div className='card-body'>
-              <div>{date}</div>
-              <div className="mb-3">{time}</div>
-              <div>開始時刻：{stampedFromAt}  {stampedByPreviousMark}</div>
-              <div>終了時刻：{stampedToAt}</div>
+              <div suppressHydrationWarning>{date}</div>
+              <div className="">
+                <span className="main-hourMinutesTime" suppressHydrationWarning>{hourMinutesTime}</span>
+                <span className="main-secondTime" suppressHydrationWarning>&nbsp;{secondTime}</span>
+              </div>
+              <div>{workStateMsg}</div>
               <div>
                 <form onSubmit={submitHandler}>
                   <div>
-                    <MDBBtn className="mt-3 mb-3 vw-50" color='info' size='lg' type="submit">打刻する</MDBBtn>
+                    <div className="inline-block mr-3">
+                      <MDBBtn className="mt-3 mb-3 vw-50" color='info' size='lg' type="submit"
+                        name="startWork">出勤　　</MDBBtn>
+                    </div>
+                    <div className="inline-block">
+                      <MDBBtn className="mt-3 mb-3 vw-50" color='info' size='lg' type="submit"
+                        name="endWork">退勤　　</MDBBtn>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="inline-block mr-3">
+                      <MDBBtn className="vw-50" color='info' size='lg' type="submit"
+                        name="startRest">休憩開始</MDBBtn>
+                    </div>
+                    <div className="inline-block">
+                      <MDBBtn className="vw-50" color='info' size='lg' type="submit"
+                        name="endRest">休憩終了</MDBBtn>
+                    </div>
                   </div>
                 </form>
               </div>
             </div>
           </div>
-        <div className='card h-100 mr-5'>
-          <div className='card-body'>
-            <div>店舗コード：{sessionData.shopCode}</div>
-            <div>店舗名：{sessionData.shopName}</div>
-            <div>氏名：{sessionData.employeeName}</div>
-            <div>
-              <MDBBtn className="mt-5 vw-50" color='secondary' onClick={() => signOut()}>ログアウト</MDBBtn>
-            </div>
-          </div>
-        </div>
       </div>
     </main>
   )
 }
 Main.displayName = "Main"
-//export default Main;
+export default Main;
 //export default dynamic(() => Promise.resolve(Main), { ssr: false });
 
 
+{/* <div className='card h-100 mr-5'>
+<div className='card-body'>
+  <div>店舗コード：{sessionData.shopCode}</div>
+  <div>店舗名：{sessionData.shopName}</div>
+  <div>氏名：{sessionData.employeeName}</div>
+  <div>
+    <MDBBtn className="mt-5 vw-50" color='secondary' onClick={() => signOut()}>ログアウト</MDBBtn>
+  </div>
+</div>
+</div> */}

@@ -1,5 +1,5 @@
-import { isNullOrEmpty } from '@/components/util/commonUtil';
-import login from '@/services/login/loginService';
+import { isNullOrEmpty } from '@/utils/common/commonUtil';
+import login from '@/services/login/toRef_loginService';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createHandler, Get, Param, Post, Req, Res } from 'next-api-decorators';
 

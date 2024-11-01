@@ -1,5 +1,5 @@
 import { User } from '@/types';
-import { prisma } from '../../../prisma/Prisma';
+import { prisma } from '@/lib/prisma/Prisma';
 
 export async function SelectByLoginId(loginId: string) : User {
   const result = await prisma.user.findFirst({

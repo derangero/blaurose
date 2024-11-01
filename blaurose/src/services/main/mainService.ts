@@ -1,62 +1,133 @@
 import { Session } from 'next-auth'
 import { DateTime,Settings } from "luxon";
-import { FindByStampedOnAndEmployeeId, FindPreviousByStampedOnAndEmployeeId, UpdateByStampedOnAndEmployeeId, UpsertByStampedOnAndEmployeeId } from '../../repositories/timecard/dba_timecard'
+import { FindByStampedOnAndEmployeeId, FindPreviousByStampedOnAndEmployeeId, findWorkingDataByStampedOnAndEmployeeId, insertByStampedOnAndEmployeeId, updateByStampedOnAndEmployeeId, UpdateByStampedOnAndEmployeeId, UpsertByStampedOnAndEmployeeId } from '../../repositories/timecard/dba_timecard'
 import { MainStampResult } from '@/models/main/mainModels';
+import { Timecard } from '@/types';
+Settings.defaultLocale = 'ja';
 
-export async function upsertTimecard(session: Session | null): Promise<MainStampResult>  {
+export async function startWork(session: Session | null): Promise<string | null> {
     try {
-        Settings.defaultLocale = 'ja';
         const today = DateTime.local();
-        const yesterday = DateTime.local().minus({days: 1});
         const employeeId = session?.user.name.employee.employee_id;
-        let stampedByPreviousMark = false;
+        let timecard = await FindByStampedOnAndEmployeeId(
+            today.toFormat('yyyyMMdd'),
+            employeeId
+        )
 
-        const todayForUpdate = DateTime.local();
-        let workedMinutes = null;
-        let restMinutesForUpdate = null;
-        let actualWorkingMinutesForUpdate = null;
+        const errorMsg = await validateStartWork(timecard); 
+        if (errorMsg) {
+            return errorMsg;
+        }
 
-        let timecard = await FindPreviousByStampedOnAndEmployeeId(yesterday.toFormat('yyyyMMdd'), employeeId);
-        if (timecard) {
-            workedMinutes = calcWorkedMinutes(timecard.stampedFrom_at, today);
-            restMinutesForUpdate = calcRestMinutes(workedMinutes)
-            actualWorkingMinutesForUpdate = calcActualWorkingMinutesTime(workedMinutes, restMinutesForUpdate)
-            
-            timecard = await UpdateByStampedOnAndEmployeeId(
-                yesterday.toFormat('yyyyMMdd'),
-                employeeId,
-                todayForUpdate,
-                restMinutesForUpdate,
-                actualWorkingMinutesForUpdate
-            )
-            stampedByPreviousMark = true;
-        } else {
-            timecard = await FindByStampedOnAndEmployeeId(today.toFormat('yyyyMMdd'), employeeId);
-            if (timecard) {
-                workedMinutes = calcWorkedMinutes(timecard.stampedFrom_at, today);
-                restMinutesForUpdate = calcRestMinutes(workedMinutes)
-                actualWorkingMinutesForUpdate = calcActualWorkingMinutesTime(workedMinutes, restMinutesForUpdate)
-            }
-            timecard = await UpsertByStampedOnAndEmployeeId(
-                today.toFormat('yyyyMMdd'),
-                employeeId,
-                todayForUpdate,
-                restMinutesForUpdate,
-                actualWorkingMinutesForUpdate
+        await insertByStampedOnAndEmployeeId(
+            today.toFormat('yyyyMMdd'),
+            employeeId,
+            today
+        )
+
+        return '';
+    } catch (error) {
+        throw error
+    }
+}
+
+export async function endWork(session: Session | null): Promise<string | null> {
+    try {
+        const today = DateTime.local();
+        const employeeId = session?.user.name.employee.employee_id;
+        let timecard = await FindByStampedOnAndEmployeeId(
+            today.toFormat('yyyyMMdd'),
+            employeeId
+        )
+        // 前日分の日跨ぎ打刻用にタイムカード取得
+        if (!timecard){
+            timecard = await findWorkingDataByStampedOnAndEmployeeId(
+                today.minus({days:1}).toFormat('yyyyMMdd'),
+                employeeId
             )
         }
 
-        return {
-            stampedFromAt: timecard && timecard.stampedFrom_at
-                ? DateTime.fromJSDate(timecard?.stampedFrom_at).toFormat('HH:mm') : "",
-            stampedToAt: timecard && timecard.stampedTo_at
-                ? DateTime.fromJSDate(timecard?.stampedTo_at).toFormat('HH:mm') : "",
-            stampedByPreviousMark: stampedByPreviousMark
-        } ;
+        const errorMsg = await validateEndWork(timecard); 
+        if (errorMsg) {
+            return errorMsg;
+        }
+
+        timecard.work_end_at = today.toJSDate();
+        await updateByStampedOnAndEmployeeId(
+            timecard
+        )
+
+        return '';
     } catch (error) {
-        return {}
+        throw error;
     }
 }
+
+export async function startRest(session: Session | null): Promise<string | null> {
+    try {
+        const today = DateTime.local();
+        const employeeId = session?.user.name.employee.employee_id;
+        let timecard = await FindByStampedOnAndEmployeeId(
+            today.toFormat('yyyyMMdd'),
+            employeeId
+        )
+        // 前日分の日跨ぎ打刻用にタイムカード取得
+        if (!timecard){
+            timecard = await findWorkingDataByStampedOnAndEmployeeId(
+                today.minus({days:1}).toFormat('yyyyMMdd'),
+                employeeId
+            )
+        }
+
+        const errorMsg = await validateStartRest(timecard); 
+        if (errorMsg) {
+            return errorMsg;
+        }
+
+        timecard.rest_start_at = today.toJSDate();
+        await updateByStampedOnAndEmployeeId(
+            timecard
+        )
+
+        return '';
+    } catch (error) {
+        throw new Error('endWork error')
+    }
+}
+
+export async function endRest(session: Session | null): Promise<string | null> {
+    try {
+        const today = DateTime.local();
+        const employeeId = session?.user.name.employee.employee_id;
+        let timecard = await FindByStampedOnAndEmployeeId(
+            today.toFormat('yyyyMMdd'),
+            employeeId
+        )
+        // 前日分の日跨ぎ打刻用にタイムカード取得
+        if (!timecard){
+            timecard = await findWorkingDataByStampedOnAndEmployeeId(
+                today.minus({days:1}).toFormat('yyyyMMdd'),
+                employeeId
+            )
+        }
+
+        const errorMsg = await validateEndRest(timecard); 
+        if (errorMsg) {
+            return errorMsg;
+        }
+
+        timecard.rest_end_at = today.toJSDate();
+        await updateByStampedOnAndEmployeeId(
+            timecard
+        )
+
+        return '';
+    } catch (error) {
+        throw new Error('endWork error')
+    }
+}
+
+
 
 function calcWorkedMinutes(stampedFrom_at:Date, stampedTo_at:DateTime): number {
     if (stampedFrom_at == null || stampedTo_at == null) {
@@ -88,7 +159,60 @@ function calcActualWorkingMinutesTime(workedMinutes: number, restMinutes?: numbe
     return null;
 }
 
-export default upsertTimecard	
+async function isExistTimecard(stampedOn: DateTime, employeeId: string ) {
+    let timecard = await FindByStampedOnAndEmployeeId(
+        stampedOn.toFormat('yyyyMMdd'),
+        employeeId
+    )
 
+    return timecard != null;
+}
 
+async function validateStartWork(timecard: Timecard) : Promise<string | null> {
+    if (timecard){
+        return 'エラー：出勤後です。';
+    }
 
+    return null;
+}
+
+async function validateEndWork(timecard: Timecard) {
+    if (!timecard) {
+        return 'エラー：出勤前です。'
+    }
+    if (timecard.rest_start_at && !timecard.rest_end_at) {
+        return 'エラー：休憩中です。休憩後に再度打刻してください。'
+    }
+    if (timecard.work_end_at) {
+        return 'エラー：退勤後です。'
+    }
+    
+    return null;
+}
+async function validateStartRest(timecard: Timecard) {
+    if (!timecard) {
+        return 'エラー：出勤前です。'
+    }
+    if (timecard.rest_start_at && !timecard.rest_end_at) {
+        return 'エラー：休憩中です。'
+    }
+    if (timecard.rest_end_at) {
+        return 'エラー：休憩後です。'
+    }
+    
+    return null;
+}
+
+async function validateEndRest(timecard: Timecard) {
+    if (!timecard) {
+        return 'エラー：出勤前です。'
+    }
+    if (!timecard.rest_start_at) {
+        return 'エラー：休憩前です。'
+    }
+    if (timecard.rest_end_at) {
+        return 'エラー：休憩後です。'
+    }
+    
+    return null;
+}

@@ -11,3 +11,7 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     height: 50px;
 }
+
+.inline-block {
+    display: inline-block
+}

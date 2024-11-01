@@ -68,9 +68,12 @@ const Login: React.FC = ({ csrfToken }: SignInProps) => {
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
+  const csrfToken = await getCsrfToken(context)
   return {
     props: {
-      csrfToken: await getCsrfToken(context),
+      // NEXTAUTH_URL に誤りがあるとエラーになる
+      csrfToken: csrfToken ? csrfToken : null,
+      //await getCsrfToken(context)
     },
   };
 };

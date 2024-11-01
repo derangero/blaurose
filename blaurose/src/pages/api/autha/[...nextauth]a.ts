@@ -1,7 +1,7 @@
 import NextAuth, { User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { SelectSessionDataByLoginIdAndPassword } from '@/repositories/user/dba_user'
-import { isNullOrEmpty } from "@/components/util/commonUtil";
+import { isNullOrEmpty } from "@/utils/common/commonUtil";
 import { toast } from "react-toastify";
 
 export default NextAuth({

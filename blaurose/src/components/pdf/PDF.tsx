@@ -1,5 +1,5 @@
 import { Page, Text, View, Document, StyleSheet, Font } from "@react-pdf/renderer";
-import { formatDisplayTime } from "../util/commonUtil";
+import { formatDisplayTime } from "../../utils/common/commonUtil";
 import { WorkListPdf, WorkListPdfParam } from "@/models/workList/workListModels";
 
 Font.register({

@@ -56,8 +56,10 @@ CREATE TABLE "m_users" (
 CREATE TABLE "t_timecard" (
     "timecard_id" TEXT NOT NULL,
     "stamped_on" INTEGER NOT NULL,
-    "stampedFrom_at" TIMESTAMPTZ(3),
-    "stampedTo_at" TIMESTAMPTZ(3),
+    "work_start_at" TIMESTAMPTZ(3),
+    "work_end_at" TIMESTAMPTZ(3),
+    "rest_start_at" TIMESTAMPTZ(3),
+    "rest_end_at" TIMESTAMPTZ(3),
     "rest_minutes_time" INTEGER,
     "actual_working_minutes_time" INTEGER,
     "overtime" INTEGER,

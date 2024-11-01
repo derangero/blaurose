@@ -50,7 +50,7 @@ pm2 log
 
 
 【※プロジェクトにインストール済み】
-・next-auth
+・next-auth 4.24.8
 npm install next-auth
 
 ・react-data-grid

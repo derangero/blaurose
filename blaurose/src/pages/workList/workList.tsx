@@ -3,10 +3,10 @@ import { forwardRef, SetStateAction, useMemo, useRef, useState } from 'react';
 import DataGrid, { Column, DataGridHandle } from 'react-data-grid';
 import { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import { getServerSession, NextAuthOptions } from 'next-auth';
-import authOptions from "../api/auth/[...nextauth]"
+import authOptions from "../api/autha/[...nextauth]a.ts"
 import { DateTime } from 'luxon';
 import { CustumDatePicker } from '@/components/date/CustumDatePicker';
-import { formatDisplayTime } from '@/components/util/commonUtil'
+import { formatDisplayTime } from '@/utils/common/commonUtil'
 import ReactDatePicker, { registerLocale } from 'react-datepicker'
 import { MDBBtn } from 'mdb-react-ui-kit';
 import { SessionData, Timecard } from '@/types';

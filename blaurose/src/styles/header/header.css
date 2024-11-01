@@ -1,0 +1,13 @@
+.header-name {
+    font-size: 0.9rem;
+    padding: 2px 0;
+}
+
+.header-container-flex {
+    display: flex;
+    justify-content: space-between;
+}
+
+.header-MDBNavbarToggler {
+    width: 100%;
+}

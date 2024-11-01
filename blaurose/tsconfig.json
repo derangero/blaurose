@@ -36,7 +36,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts", 
     "@types/index.d.ts"
-  ],
+, "src/pages/api/autha/[...nextauth]a.ts"  ],
   "exclude": [
     "node_modules"
   ]

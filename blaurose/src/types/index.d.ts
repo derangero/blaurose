@@ -11,14 +11,13 @@
     csrfToken?: string;
   };
   type SessionData = {
+    companyId: string
     shopCode: string
     shopName: string
     employeeName: string
     employeeId: string
-    stampedFromAt?: Date
-    stampedToAt?: Date
-    stampedByPreviousMark?: string
   }
+  type MDBBtnColor = "secondary" | "link" | "none" | "primary" | "success" | "danger" | "warning" | "light" | "dark" | "muted" | "white" | "info" | "tertiary" | undefined;
 
   export type Timecard = (typeof Timecard)[keyof typeof Timecard]
   export type User = (typeof User)[keyof typeof User]

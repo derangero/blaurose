@@ -83,22 +83,25 @@ model User {
 }
 
 model Timecard {
-  timecard_id String                @id @default(cuid())
-  stamped_on Int
-  stampedFrom_at DateTime?          @db.Timestamptz(3)
-  stampedTo_at DateTime?            @db.Timestamptz(3)
+  timecard_id   String             @id @default(cuid())
+  stamped_on    Int
+  work_start_at DateTime?          @db.Timestamptz(3)
+  work_end_at   DateTime?          @db.Timestamptz(3)
+  rest_start_at DateTime?          @db.Timestamptz(3)
+  rest_end_at DateTime?            @db.Timestamptz(3)
+
   rest_minutes_time Int?
   actual_working_minutes_time Int?
   overtime Int?
   late_night_work_time Int?
   holiday_work_time Int?
-  stamp_approval  Boolean           @default(false)
+  stamp_approval  Boolean          @default(false)
 
   employee  Employee  @relation(fields: [employee_id], references: [employee_id])  
   employee_id String
 
   stamp_delete  Boolean @default(false)
-  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  created_at    DateTime @default(now()) @db.Timestamptz(3)
   updated_at    DateTime? @updatedAt    @db.Timestamptz(3)
 
   @@map("t_timecard")
